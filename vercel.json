@@ -1,0 +1,6 @@
+{
+  "crons": [
+    { "path": "/api/cron/weekly?secret=__SET_IN_DASHBOARD__", "schedule": "0 8 * * 1" },
+    { "path": "/api/cron/monthly?secret=__SET_IN_DASHBOARD__", "schedule": "0 8 1 * *" }
+  ]
+}

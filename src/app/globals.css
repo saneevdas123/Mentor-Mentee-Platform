@@ -1,0 +1,33 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --brand: #0b5d3b;
+}
+
+html, body {
+  background: #f5f7f6;
+  color: #111827;
+}
+
+/* Reusable component classes */
+.card { @apply bg-white rounded-xl border border-gray-200 shadow-sm; }
+.btn { @apply inline-flex items-center justify-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition; }
+.btn-primary { @apply btn bg-brand text-white hover:bg-brand-dark; }
+.btn-ghost { @apply btn border border-gray-300 bg-white text-gray-700 hover:bg-gray-50; }
+.btn-danger { @apply btn bg-red-600 text-white hover:bg-red-700; }
+.input { @apply w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-brand focus:ring-1 focus:ring-brand outline-none; }
+.label { @apply block text-xs font-medium text-gray-600 mb-1; }
+.badge { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium; }
+.th { @apply text-left text-xs font-semibold text-gray-500 uppercase tracking-wider px-4 py-3; }
+.td { @apply px-4 py-3 text-sm text-gray-700 border-t border-gray-100; }
+
+/* Print styles for NAAC/NIRF/NBA reports */
+@media print {
+  .no-print { display: none !important; }
+  body { background: #fff; }
+  .card { box-shadow: none; border: 1px solid #d1d5db; }
+  .print-page { page-break-after: always; }
+  @page { margin: 16mm; }
+}

@@ -1,0 +1,36 @@
+{
+  "name": "cutm-mentor-mentee-platform",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Mentor-Mentee Platform for Centurion University of Technology and Management (NAAC / NIRF / NBA ready)",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "seed": "node scripts/seed.js",
+    "worker": "node scripts/worker.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "date-fns": "^3.6.0",
+    "exceljs": "^4.4.0",
+    "googleapis": "^140.0.1",
+    "jose": "^5.6.3",
+    "mongoose": "^8.5.1",
+    "next": "^14.2.35",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.9.14",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.19",
+    "dotenv": "^16.4.5",
+    "postcss": "^8.4.39",
+    "tailwindcss": "^3.4.6"
+  },
+  "engines": {
+    "node": ">=18.18.0"
+  }
+}
