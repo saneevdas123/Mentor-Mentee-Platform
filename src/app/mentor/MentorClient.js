@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Shell from '@/components/Shell';
 import { Stat, Card, Modal, Field, Badge, riskTone, statusTone, useToast } from '@/components/ui';
 import ProfileEditor from '@/components/ProfileEditor';
+import MenteeWorkspace from '@/components/MenteeWorkspace';
 
 const NAV = [{ href: '/mentor', label: 'Dashboard' }];
 
@@ -13,6 +14,7 @@ export default function MentorClient({ me }) {
   const [minutes, setMinutes] = useState([]);
   const [issues, setIssues] = useState([]);
   const [editing, setEditing] = useState(null);
+  const [workspace, setWorkspace] = useState(null);
   const [showMeet, setShowMeet] = useState(false);
   const [meetForm, setMeetForm] = useState({ type: 'WEEKLY_MENTORING', durationMins: 45 });
   const [viewMin, setViewMin] = useState(null);
@@ -86,7 +88,7 @@ export default function MentorClient({ me }) {
       </div>
 
       {tab === 'mentees' && (
-        <Card title="My Mentees">
+        <Card title="My Mentees" actions={<a className="btn-ghost" href="/api/reports/interactions">Interaction report (Excel)</a>}>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead><tr><th className="th">Reg. No</th><th className="th">Name</th><th className="th">Programme</th><th className="th">CGPA</th><th className="th">Backlogs</th><th className="th">Risk</th><th className="th"></th></tr></thead>
@@ -99,7 +101,10 @@ export default function MentorClient({ me }) {
                     <td className="td">{s.latestCGPA ?? '—'}</td>
                     <td className="td">{s.liveBacklogs ?? 0}</td>
                     <td className="td"><Badge tone={riskTone(s.riskLevel)}>{s.riskLevel}</Badge></td>
-                    <td className="td"><button className="btn-ghost" onClick={() => setEditing(s)}>Edit profile</button></td>
+                    <td className="td whitespace-nowrap">
+                      <button className="btn-primary py-1 mr-1" onClick={() => setWorkspace(s)}>Mentoring</button>
+                      <button className="btn-ghost py-1" onClick={() => setEditing(s)}>Profile</button>
+                    </td>
                   </tr>
                 ))}
                 {!students.length && <tr><td className="td text-gray-400" colSpan={7}>No mentees assigned yet.</td></tr>}
@@ -175,6 +180,11 @@ export default function MentorClient({ me }) {
           </div>
         </Card>
       )}
+
+      {/* Mentee mentoring workspace */}
+      <Modal open={!!workspace} onClose={() => { setWorkspace(null); load(); }} title="Mentoring Workspace" wide>
+        {workspace && <MenteeWorkspace student={workspace} onClose={() => { setWorkspace(null); load(); }} />}
+      </Modal>
 
       {/* Profile editor */}
       <Modal open={!!editing} onClose={() => setEditing(null)} title={editing ? `Edit — ${editing.name}` : ''} wide>

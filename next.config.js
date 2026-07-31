@@ -2,7 +2,7 @@
 const nextConfig = {
   reactStrictMode: true,
   experimental: {
-    serverComponentsExternalPackages: ['mongoose', 'exceljs', 'nodemailer', 'googleapis', 'node-cron'],
+    serverComponentsExternalPackages: ['mongoose', 'exceljs', 'nodemailer', 'googleapis', 'node-cron', 'pdf-parse'],
   },
 };
 

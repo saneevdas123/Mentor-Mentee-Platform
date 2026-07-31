@@ -19,9 +19,16 @@ ADMIN ──► DEAN ──► HoD ──► FACULTY MENTOR ──► STUDENT ME
 |------|--------|
 | **Admin** | Adds Schools, provisions Deans, monitors everything, prints reports |
 | **Dean** | Adds Departments (with programmes), provisions HoDs |
-| **HoD** | Provisions Faculty Mentors, adds Students (manual **or Excel import**), maps mentors↔mentees |
-| **Faculty Mentor** | Updates full student profile (academics, placements, activities, OBE), schedules meetings, records minutes, resolves issues |
-| **Student Mentee** | Views academic/placement/activity profile, raises issues, sees scheduled meetings |
+| **HoD** | Provisions Faculty Mentors, adds Students (manual **or Excel import**), maps mentors↔mentees, defines **CBCS baskets** & per-student **credit plans**, decides **branch-change** requests |
+| **Faculty Mentor** | Updates full student profile, runs the **mentoring workspace** (credit tracker, gradesheet review, counselling, branch-change counselling), schedules meetings, records minutes, resolves issues |
+| **Student Mentee** | Views profile & **credit tracker**, uploads **gradesheet PDFs** on request, reads counselling notes, raises issues, requests **branch change** (1st year) |
+
+**CBCS credit tracking & academic counselling**
+- HoDs define **baskets** (credit buckets) and set **basket-wise credit requirements** per student.
+- Students upload **gradesheet PDFs**; the system parses course/credit/grade rows and maps each course to a basket (auto-mapped via a learned course→basket memory; the mentor verifies).
+- A per-student **Credit Tracker** shows earned/remaining credits per basket, overall completion, a time-to-completion projection, and what to take next.
+- Mentors record **credit counselling** (which subjects/credits to take) and **branch-change counselling** (1st-year students) — every interaction is logged.
+- **Downloadable interaction report** (Excel, per-student or per-mentor) covering counselling, branch-change, and gradesheet activity.
 
 **Automation**
 - **Weekly** announcement email to mentors + mentees with an auto-created **Google Meet** link.
@@ -156,3 +163,11 @@ Workspace service account, add file-storage for proof documents (offer letters,
 certificates) — the schema has URL fields ready for an S3/GCS integration — and layer in
 your ERP sync. The data model is intentionally aligned to the accreditation metrics so
 these additions are incremental, not structural.
+
+**On gradesheet parsing:** the PDF reader works on **text-based** gradesheets (not scanned
+images) and is deliberately conservative — it auto-maps courses to baskets where it can and
+flags the rest for the mentor to confirm during review. Because CUTM gradesheet layouts vary,
+treat the parser as an accelerator with a human verification step, not a black box; every
+mapping is editable, and confirmed course→basket mappings are remembered for future uploads.
+Gradesheet PDFs are stored inline in MongoDB for a self-contained deployment; for very large
+installations switch `Gradesheet.fileData` to GridFS or object storage.

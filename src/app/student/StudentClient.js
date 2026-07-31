@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Shell from '@/components/Shell';
 import { Stat, Card, Modal, Field, Badge, statusTone, useToast } from '@/components/ui';
 import ProfileEditor from '@/components/ProfileEditor';
+import StudentAcademics from '@/components/StudentAcademics';
 
 const NAV = [{ href: '/student', label: 'Dashboard' }];
 
@@ -51,7 +52,7 @@ export default function StudentClient({ me }) {
       </div>
 
       <div className="flex flex-wrap gap-2 mb-4">
-        {[['overview', 'Overview'], ['academics', 'Academics'], ['issues', 'My Issues'], ['meetings', 'Meetings']].map(([k, l]) => (
+        {[['overview', 'Overview'], ['academics', 'Academics'], ['credits', 'Credits & Counselling'], ['issues', 'My Issues'], ['meetings', 'Meetings']].map(([k, l]) => (
           <button key={k} className={tab === k ? 'btn-primary' : 'btn-ghost'} onClick={() => setTab(k)}>{l}</button>
         ))}
       </div>
@@ -85,6 +86,8 @@ export default function StudentClient({ me }) {
           </table>
         </Card>
       )}
+
+      {tab === 'credits' && <StudentAcademics student={profile} show={show} />}
 
       {tab === 'issues' && (
         <Card title="My Issues" actions={<button className="btn-primary" onClick={() => setShowIssue(true)}>+ Raise Issue</button>}>

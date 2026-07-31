@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Shell from '@/components/Shell';
 import { Stat, Card, Modal, Field, Badge, riskTone, useToast } from '@/components/ui';
+import { BasketManager, CreditPlanEditor, BranchDecisions } from '@/components/AcademicSetup';
 
 const NAV = [
   { href: '/hod', label: 'Overview' },
@@ -26,6 +27,7 @@ export default function HodClient({ me }) {
   const [issueCreds, setIssueCreds] = useState(true);
   const [mapMentor, setMapMentor] = useState('');
   const [mapStudents, setMapStudents] = useState([]);
+  const [planStudent, setPlanStudent] = useState(null);
   const { show, node } = useToast();
 
   async function load() {
@@ -97,6 +99,8 @@ export default function HodClient({ me }) {
         <button className={tab === 'mentors' ? 'btn-primary' : 'btn-ghost'} onClick={() => setTab('mentors')}>Mentors</button>
         <button className={tab === 'students' ? 'btn-primary' : 'btn-ghost'} onClick={() => setTab('students')}>Students</button>
         <button className={tab === 'mapping' ? 'btn-primary' : 'btn-ghost'} onClick={() => setTab('mapping')}>Mapping</button>
+        <button className={tab === 'baskets' ? 'btn-primary' : 'btn-ghost'} onClick={() => setTab('baskets')}>Baskets</button>
+        <button className={tab === 'branch' ? 'btn-primary' : 'btn-ghost'} onClick={() => setTab('branch')}>Branch Changes</button>
       </div>
 
       {tab === 'mentors' && (
@@ -135,7 +139,7 @@ export default function HodClient({ me }) {
         }>
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead><tr><th className="th">Reg. No</th><th className="th">Name</th><th className="th">Programme</th><th className="th">Sem</th><th className="th">CGPA</th><th className="th">Risk</th><th className="th">Mentor</th></tr></thead>
+              <thead><tr><th className="th">Reg. No</th><th className="th">Name</th><th className="th">Programme</th><th className="th">Sem</th><th className="th">CGPA</th><th className="th">Risk</th><th className="th">Mentor</th><th className="th">Credit Plan</th></tr></thead>
               <tbody>
                 {students.map((s) => {
                   const map = mappings.find((x) => x.student?._id === s._id);
@@ -148,10 +152,11 @@ export default function HodClient({ me }) {
                       <td className="td">{s.latestCGPA ?? '—'}</td>
                       <td className="td"><Badge tone={riskTone(s.riskLevel)}>{s.riskLevel}</Badge></td>
                       <td className="td">{map ? map.mentor?.name : <Badge tone="amber">Unmapped</Badge>}</td>
+                      <td className="td"><button className="btn-ghost py-1" onClick={() => setPlanStudent(s)}>Set plan</button></td>
                     </tr>
                   );
                 })}
-                {!students.length && <tr><td className="td text-gray-400" colSpan={7}>No students yet. Use Import Excel to bulk-add.</td></tr>}
+                {!students.length && <tr><td className="td text-gray-400" colSpan={8}>No students yet. Use Import Excel to bulk-add.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -179,6 +184,15 @@ export default function HodClient({ me }) {
           </div>
         </Card>
       )}
+
+      {tab === 'baskets' && <BasketManager show={show} />}
+
+      {tab === 'branch' && <BranchDecisions show={show} />}
+
+      {/* Credit plan editor */}
+      <Modal open={!!planStudent} onClose={() => setPlanStudent(null)} title={planStudent ? `Credit Plan — ${planStudent.name}` : ''} wide>
+        {planStudent && <CreditPlanEditor student={planStudent} onClose={() => setPlanStudent(null)} show={show} />}
+      </Modal>
 
       {/* Add Mentor */}
       <Modal open={showMentor} onClose={() => { setShowMentor(false); setCreds(null); }} title="Add Faculty Mentor">
