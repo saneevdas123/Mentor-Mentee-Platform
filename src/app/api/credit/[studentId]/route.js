@@ -24,12 +24,37 @@ export async function GET(req, { params }) {
     Basket.find({ department: student.department, isActive: true }).sort({ order: 1, name: 1 }).lean(),
   ]);
 
+  const verified = gradesheets.filter((g) => g.status === 'VERIFIED');
+  const pending = gradesheets.filter((g) => g.status !== 'VERIFIED');
+
+  // Official tracker uses mentor-verified gradesheets only.
   const progress = computeProgress({
     plan,
-    gradesheets,
+    gradesheets: verified,
     baskets,
     currentSemester: student.currentSemester,
   });
 
-  return json({ student, plan: plan || null, baskets, gradesheets, progress });
+  // Provisional view includes unverified uploads so mentors can preview before verify.
+  const provisional = pending.length
+    ? computeProgress({
+      plan,
+      gradesheets,
+      baskets,
+      currentSemester: student.currentSemester,
+    })
+    : null;
+
+  return json({
+    student,
+    plan: plan || null,
+    baskets,
+    gradesheets,
+    progress: {
+      ...progress,
+      verifiedSheets: verified.length,
+      pendingSheets: pending.length,
+      provisional,
+    },
+  });
 }

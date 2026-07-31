@@ -189,8 +189,12 @@ export function SkeletonStats({ count = 4 }) {
 
 export function riskTone(r) { return r === 'HIGH' ? 'red' : r === 'MEDIUM' ? 'amber' : 'green'; }
 export function statusTone(s) {
-  return ({ OPEN: 'amber', IN_PROGRESS: 'blue', RESOLVED: 'green', CLOSED: 'gray', ESCALATED: 'red',
-    SCHEDULED: 'blue', NOTIFIED: 'brand', COMPLETED: 'green', CANCELLED: 'gray' })[s] || 'gray';
+  return ({
+    OPEN: 'amber', IN_PROGRESS: 'blue', RESOLVED: 'green', CLOSED: 'gray', ESCALATED: 'red',
+    SCHEDULED: 'blue', NOTIFIED: 'brand', COMPLETED: 'green', CANCELLED: 'gray',
+    REQUESTED: 'amber', COUNSELLED: 'blue', RECOMMENDED: 'green', NOT_RECOMMENDED: 'red',
+    APPROVED: 'green', REJECTED: 'red', WITHDRAWN: 'gray',
+  })[s] || 'gray';
 }
 
 export function useToast() {

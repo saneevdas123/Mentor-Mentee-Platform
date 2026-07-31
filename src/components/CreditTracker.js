@@ -15,12 +15,20 @@ function Bar({ pct, tone = '#0b5d3b' }) {
 const statusTone = (s) => (s === 'COMPLETE' ? 'green' : s === 'IN_PROGRESS' ? 'amber' : 'gray');
 
 export default function CreditTracker({ progress }) {
-  if (!progress) return null;
+  if (!progress) {
+    return (
+      <div className="space-y-3 animate-pulse" aria-busy="true">
+        <div className="skeleton h-20 w-full rounded-xl" />
+        <div className="skeleton h-10 w-full" />
+        <div className="skeleton h-10 w-full" />
+      </div>
+    );
+  }
   if (!progress.hasPlan) {
     return (
       <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-4 text-sm">
         No credit plan has been set for this student yet. A Head of Department needs to define the basket-wise
-        credit requirements before the tracker can show progress.
+        credit requirements (CBCS) before the tracker can show progress.
       </div>
     );
   }
@@ -28,8 +36,15 @@ export default function CreditTracker({ progress }) {
   const barTone = p.overallPct >= 100 ? '#0b5d3b' : p.overallPct >= 60 ? '#c8a24a' : '#b45309';
 
   return (
-    <div className="space-y-5">
-      {/* Overall */}
+    <div className="space-y-5 animate-fade-up">
+      {(p.pendingSheets > 0 || p.verifiedSheets === 0) && (
+        <div className="bg-blue-50 border border-blue-200 text-blue-800 rounded-lg p-3 text-sm">
+          {p.verifiedSheets === 0
+            ? 'Official progress starts after the mentor verifies uploaded gradesheets (basket mapping confirmed).'
+            : `${p.pendingSheets} gradesheet(s) awaiting mentor verification — they are not counted in the official tracker yet.`}
+        </div>
+      )}
+
       <div className="border border-gray-200 rounded-xl p-4">
         <div className="flex items-center justify-between mb-2">
           <div className="font-semibold text-gray-800">Overall completion</div>
@@ -44,12 +59,17 @@ export default function CreditTracker({ progress }) {
           {p.onTrack != null && (
             <span>Graduation: {p.onTrack ? <Badge tone="green">On track</Badge> : <Badge tone="red">At risk of delay</Badge>}</span>
           )}
-          {p.unassignedCredits > 0 && <span className="text-amber-700">Unassigned credits: <b>{p.unassignedCredits}</b> (map them in gradesheet review)</span>}
+          {p.unassignedCredits > 0 && (
+            <span className="text-amber-700">Unassigned credits: <b>{p.unassignedCredits}</b> (map them in gradesheet review)</span>
+          )}
+          {p.verifiedSheets != null && (
+            <span>Verified sheets: <b>{p.verifiedSheets}</b></span>
+          )}
         </div>
       </div>
 
-      {/* Per basket */}
       <div className="space-y-3">
+        <div className="text-xs font-semibold uppercase tracking-wide text-gray-500">Basket-wise (CBCS)</div>
         {p.lines.map((l, i) => (
           <div key={i} className="grid grid-cols-12 items-center gap-3">
             <div className="col-span-4 text-sm">
@@ -65,15 +85,18 @@ export default function CreditTracker({ progress }) {
         ))}
       </div>
 
-      {/* Recommendations */}
       {p.recommendations.length > 0 && (
         <div className="bg-brand-light border border-green-200 rounded-lg p-4">
-          <div className="font-semibold text-brand mb-1 text-sm">To finish on time, focus next on:</div>
+          <div className="font-semibold text-brand mb-1 text-sm">To finish on time, take credits next in:</div>
           <ul className="list-disc pl-5 text-sm text-gray-700 space-y-0.5">
             {p.recommendations.map((r, i) => (
-              <li key={i}>{r.creditsToTake} credit(s) in <b>{r.basketName}</b></li>
+              <li key={i}>
+                <b>{r.creditsToTake}</b> credit(s) in <b>{r.basketName}</b>
+                {r.priority === 'HIGH' && <Badge tone="red"> Priority</Badge>}
+              </li>
             ))}
           </ul>
+          <p className="text-xs text-gray-500 mt-2">Mentors should record this as Credit Counselling so the student can acknowledge and it appears in the interaction report.</p>
         </div>
       )}
     </div>

@@ -34,6 +34,14 @@ const StudentProfile = mongoose.model('StudentProfile', new s({
   placements: Array, activities: Array,
 }, { timestamps: true }));
 const Mapping = mongoose.model('Mapping', new s({ mentor: s.Types.ObjectId, student: s.Types.ObjectId, department: s.Types.ObjectId, school: s.Types.ObjectId, academicYear: String, active: { type: Boolean, default: true } }, { timestamps: true }));
+const Basket = mongoose.model('Basket', new s({
+  name: String, code: String, aliases: [String], defaultCredits: Number, order: Number,
+  school: s.Types.ObjectId, department: s.Types.ObjectId, isActive: { type: Boolean, default: true },
+}, { timestamps: true }));
+const CreditPlan = mongoose.model('CreditPlan', new s({
+  student: { type: s.Types.ObjectId, unique: true }, school: s.Types.ObjectId, department: s.Types.ObjectId,
+  programme: String, lines: Array, totalRequired: Number, creditsPerSemester: Number, expectedSemesters: Number,
+}, { timestamps: true }));
 
 async function upsertUser({ name, email, role, password, extra = {} }) {
   const passwordHash = await bcrypt.hash(password, 10);
@@ -109,39 +117,82 @@ async function main() {
       { role: 'MENTOR', name: mentor.name, email: 'mentor.cse@cutm.ac.in', password: DEMO_PASSWORD },
     );
 
-    const demoStudents = [
-      { registrationNo: '2201CSE001', name: 'Aarav Sahoo', email: 'aarav@cutm.ac.in', latestCGPA: 8.4, liveBacklogs: 0, riskLevel: 'LOW', parentEmail: 'parent.aarav@example.com', placements: [{ type: 'PLACEMENT', company: 'TCS', ctcLPA: 4.5, status: 'ACCEPTED' }] },
-      { registrationNo: '2201CSE002', name: 'Diya Patra', email: 'diya@cutm.ac.in', latestCGPA: 6.1, liveBacklogs: 2, riskLevel: 'HIGH', parentEmail: 'parent.diya@example.com', placements: [] },
-      { registrationNo: '2201CSE003', name: 'Ishaan Rout', email: 'ishaan@cutm.ac.in', latestCGPA: 9.1, liveBacklogs: 0, riskLevel: 'LOW', parentEmail: 'parent.ishaan@example.com', placements: [{ type: 'HIGHER_STUDIES', institution: 'IIT', programme: 'M.Tech', status: 'ACCEPTED' }] },
+    // CBCS baskets for the department (HoD-editable later).
+    const basketDefs = [
+      { name: 'Program Core', code: 'PC', defaultCredits: 80, order: 1, aliases: ['Programme Core', 'Core'] },
+      { name: 'Program Elective', code: 'PE', defaultCredits: 18, order: 2, aliases: ['Programme Elective', 'Elective'] },
+      { name: 'Skill Enhancement', code: 'SE', defaultCredits: 12, order: 3, aliases: ['Skill', 'SEC'] },
+      { name: 'Foundation', code: 'FC', defaultCredits: 20, order: 4, aliases: ['Foundation Course', 'Basic Sciences'] },
+      { name: 'Project / Internship', code: 'PI', defaultCredits: 10, order: 5, aliases: ['Project', 'Internship', 'Major Project'] },
     ];
+    const baskets = [];
+    for (const bd of basketDefs) {
+      const b = await Basket.findOneAndUpdate(
+        { department: dept._id, name: bd.name },
+        { ...bd, school: school._id, department: dept._id, isActive: true },
+        { upsert: true, new: true }
+      );
+      baskets.push(b);
+    }
+    console.log(`✔ CBCS baskets ready (${baskets.length})`);
+
+    const demoStudents = [
+      { registrationNo: '2201CSE001', name: 'Aarav Sahoo', email: 'aarav@cutm.ac.in', latestCGPA: 8.4, liveBacklogs: 0, riskLevel: 'LOW', parentEmail: 'parent.aarav@example.com', currentSemester: 6, batch: '2022-2026', placements: [{ type: 'PLACEMENT', company: 'TCS', ctcLPA: 4.5, status: 'ACCEPTED' }] },
+      { registrationNo: '2201CSE002', name: 'Diya Patra', email: 'diya@cutm.ac.in', latestCGPA: 6.1, liveBacklogs: 2, riskLevel: 'HIGH', parentEmail: 'parent.diya@example.com', currentSemester: 6, batch: '2022-2026', placements: [] },
+      { registrationNo: '2201CSE003', name: 'Ishaan Rout', email: 'ishaan@cutm.ac.in', latestCGPA: 9.1, liveBacklogs: 0, riskLevel: 'LOW', parentEmail: 'parent.ishaan@example.com', currentSemester: 6, batch: '2022-2026', placements: [{ type: 'HIGHER_STUDIES', institution: 'IIT', programme: 'M.Tech', status: 'ACCEPTED' }] },
+      // First-year student for branch-change counselling demos
+      { registrationNo: '2501CSE014', name: 'Kiara Mohanty', email: 'kiara@cutm.ac.in', latestCGPA: 7.8, liveBacklogs: 0, riskLevel: 'LOW', parentEmail: 'parent.kiara@example.com', currentSemester: 1, batch: '2025-2029', placements: [] },
+    ];
+
+    const planLines = baskets.map((b) => ({
+      basket: b._id,
+      basketName: b.name,
+      requiredCredits: b.defaultCredits || 0,
+    }));
+    const totalRequired = planLines.reduce((a, l) => a + l.requiredCredits, 0);
 
     for (const d of demoStudents) {
       const studentUser = await upsertUser({
         name: d.name, email: d.email, role: 'STUDENT', password: DEMO_PASSWORD,
         extra: { school: school._id, department: dept._id },
       });
+      const { currentSemester, batch, ...profileRest } = d;
       const sp = await StudentProfile.findOneAndUpdate(
         { registrationNo: d.registrationNo },
         {
-          ...d,
+          ...profileRest,
           user: studentUser._id,
           programme: 'B.Tech CSE',
-          batch: '2022-2026',
-          currentSemester: 6,
+          batch,
+          currentSemester,
           school: school._id,
           department: dept._id,
         },
         { upsert: true, new: true }
       );
       await Mapping.findOneAndUpdate(
-        { mentor: mentor._id, student: sp._id, academicYear: '2022-2026' },
-        { mentor: mentor._id, student: sp._id, department: dept._id, school: school._id, academicYear: '2022-2026', active: true },
+        { mentor: mentor._id, student: sp._id, academicYear: batch },
+        { mentor: mentor._id, student: sp._id, department: dept._id, school: school._id, academicYear: batch, active: true },
         { upsert: true }
+      );
+      await CreditPlan.findOneAndUpdate(
+        { student: sp._id },
+        {
+          student: sp._id,
+          school: school._id,
+          department: dept._id,
+          programme: 'B.Tech CSE',
+          lines: planLines,
+          totalRequired,
+          creditsPerSemester: 20,
+          expectedSemesters: 8,
+        },
+        { upsert: true, new: true }
       );
       creds.push({ role: 'STUDENT', name: d.name, email: d.email, password: DEMO_PASSWORD });
     }
 
-    console.log('✔ Demo school/dept/mappings ready (SOET / CSE).');
+    console.log('✔ Demo school/dept/mappings + CBCS credit plans ready (SOET / CSE).');
   }
 
   console.log('\n========== SHAREABLE LOGIN CREDENTIALS ==========');

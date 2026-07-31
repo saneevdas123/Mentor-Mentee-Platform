@@ -39,12 +39,17 @@ function dedupeCourses(gradesheets = []) {
 }
 
 /**
- * computeProgress({ plan, gradesheets, baskets }) -> report object
+ * computeProgress({ plan, gradesheets, baskets, currentSemester }) -> report object
+ *
+ * Only pass gradesheets that should count (typically VERIFIED). Caller decides.
  */
 export function computeProgress({ plan, gradesheets = [], baskets = [], currentSemester = null }) {
   const courses = dedupeCourses(gradesheets);
+  const basketById = new Map((baskets || []).map((b) => [idStr(b._id), b]));
 
   // Earned credits per basket (only passing grades count).
+  // A course with basketId counts only toward that id.
+  // A course with only basketName counts toward the name bucket (fallback).
   const earnedByBasketId = new Map();
   const earnedByBasketName = new Map();
   let earnedTotal = 0;
@@ -52,22 +57,28 @@ export function computeProgress({ plan, gradesheets = [], baskets = [], currentS
   for (const c of courses) {
     if (!c.passed) continue;
     earnedTotal += c.credit;
-    if (c.basketId) earnedByBasketId.set(c.basketId, (earnedByBasketId.get(c.basketId) || 0) + c.credit);
-    else if (c.basketName) earnedByBasketName.set(norm(c.basketName), (earnedByBasketName.get(norm(c.basketName)) || 0) + c.credit);
-    else unassigned.push(c);
+    if (c.basketId) {
+      earnedByBasketId.set(c.basketId, (earnedByBasketId.get(c.basketId) || 0) + c.credit);
+    } else if (c.basketName) {
+      earnedByBasketName.set(norm(c.basketName), (earnedByBasketName.get(norm(c.basketName)) || 0) + c.credit);
+    } else {
+      unassigned.push(c);
+    }
   }
 
   const planLines = (plan?.lines || []).map((line) => {
     const bid = idStr(line.basket);
-    const earned =
-      (earnedByBasketId.get(bid) || 0) +
-      (earnedByBasketName.get(norm(line.basketName)) || 0);
+    const basket = bid ? basketById.get(bid) : null;
+    const nameKey = norm(line.basketName || basket?.name);
+    // Prefer id match; also include name-only mapped courses for the same basket.
+    // Courses with a basketId are never also in the name map, so no double-count.
+    const earned = (bid ? (earnedByBasketId.get(bid) || 0) : 0) + (nameKey ? (earnedByBasketName.get(nameKey) || 0) : 0);
     const required = Number(line.requiredCredits) || 0;
     const remaining = Math.max(0, required - earned);
     const pct = required ? Math.min(100, Math.round((earned / required) * 100)) : 100;
     return {
       basket: bid || null,
-      basketName: line.basketName,
+      basketName: line.basketName || basket?.name || 'Basket',
       required,
       earned,
       remaining,
@@ -77,10 +88,11 @@ export function computeProgress({ plan, gradesheets = [], baskets = [], currentS
   });
 
   const totalRequired = Number(plan?.totalRequired) || planLines.reduce((a, l) => a + l.required, 0);
-  const totalRemaining = Math.max(0, totalRequired - earnedTotal);
-  const overallPct = totalRequired ? Math.min(100, Math.round((earnedTotal / totalRequired) * 100)) : 0;
+  // Basket-wise remaining is the source of truth for CBCS counselling.
+  const totalRemaining = planLines.reduce((a, l) => a + l.remaining, 0);
+  const assignedEarned = planLines.reduce((a, l) => a + l.earned, 0);
+  const overallPct = totalRequired ? Math.min(100, Math.round((assignedEarned / totalRequired) * 100)) : 0;
 
-  // Projection.
   const perSem = Number(plan?.creditsPerSemester) || 20;
   const semestersLeft = perSem ? Math.ceil(totalRemaining / perSem) : null;
   const expectedSemesters = Number(plan?.expectedSemesters) || 8;
@@ -90,7 +102,6 @@ export function computeProgress({ plan, gradesheets = [], baskets = [], currentS
     onTrack = semDone + semestersLeft <= expectedSemesters;
   }
 
-  // Recommendations: baskets still short, biggest gap first.
   const recommendations = planLines
     .filter((l) => l.remaining > 0)
     .sort((a, b) => b.remaining - a.remaining)
@@ -98,12 +109,14 @@ export function computeProgress({ plan, gradesheets = [], baskets = [], currentS
       basket: l.basket,
       basketName: l.basketName,
       creditsToTake: l.remaining,
-      note: `Still need ${l.remaining} credit(s) in ${l.basketName}.`,
+      note: `Still need ${l.remaining} credit(s) in ${l.basketName} to stay on the CBCS plan.`,
+      priority: l.remaining >= perSem ? 'HIGH' : l.remaining >= perSem / 2 ? 'MEDIUM' : 'LOW',
     }));
 
   return {
     totalRequired,
-    earnedTotal,
+    earnedTotal: assignedEarned,
+    passedCreditsAll: earnedTotal,
     totalRemaining,
     overallPct,
     perSem,

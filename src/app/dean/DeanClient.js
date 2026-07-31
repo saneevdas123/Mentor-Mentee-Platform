@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Shell from '@/components/Shell';
 import { Stat, Card, Modal, Field, Badge, useToast, Tabs, PageHeader, EmptyState, SkeletonRows, Btn } from '@/components/ui';
+import { BranchDecisions } from '@/components/AcademicSetup';
 
 const NAV = [
   { href: '/dean', label: 'Overview' },
@@ -76,7 +77,11 @@ export default function DeanClient({ me }) {
       </div>
 
       <Tabs
-        tabs={[{ key: 'departments', label: 'Departments' }, { key: 'hods', label: 'HoDs' }]}
+        tabs={[
+          { key: 'departments', label: 'Departments' },
+          { key: 'hods', label: 'HoDs' },
+          { key: 'branch', label: 'Branch Changes' },
+        ]}
         value={tab}
         onChange={setTab}
       />
@@ -110,6 +115,8 @@ export default function DeanClient({ me }) {
           )}
         </Card>
       )}
+
+      {tab === 'branch' && <BranchDecisions show={show} />}
 
       {tab === 'hods' && (
         <Card title="Heads of Department" actions={<Btn onClick={() => setShowHod(true)}>+ Provision HoD</Btn>}>

@@ -112,7 +112,7 @@ export default function MentorClient({ me }) {
       />
 
       {tab === 'mentees' && (
-        <Card title="My Mentees" actions={<a className="btn-ghost" href="/api/reports/interactions">Interaction report (Excel)</a>}>
+        <Card title="My Mentees" actions={<a className="btn-primary" href="/api/reports/interactions">Download all interaction reports</a>}>
           {loading ? <SkeletonRows rows={5} cols={5} /> : (
             <div className="overflow-x-auto">
               <table className="w-full">

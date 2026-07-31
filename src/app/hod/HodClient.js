@@ -30,18 +30,21 @@ export default function HodClient({ me }) {
   const [mapMentor, setMapMentor] = useState('');
   const [mapStudents, setMapStudents] = useState([]);
   const [planStudent, setPlanStudent] = useState(null);
+  const [planIds, setPlanIds] = useState(new Set());
   const { show, node } = useToast();
 
   async function load() {
     try {
-      const [m, s, mp] = await Promise.all([
+      const [m, s, mp, pl] = await Promise.all([
         fetch('/api/users?role=MENTOR').then((r) => r.json()),
         fetch('/api/students').then((r) => r.json()),
         fetch('/api/mapping').then((r) => r.json()),
+        fetch('/api/credit-plan').then((r) => r.json()),
       ]);
       setMentors(m.users || []);
       setStudents(s.students || []);
       setMappings(mp.mappings || []);
+      setPlanIds(new Set(pl.studentIdsWithPlan || []));
     } catch {
       show('Failed to load dashboard', { tone: 'error' });
     } finally {
@@ -174,6 +177,7 @@ export default function HodClient({ me }) {
                 <tbody>
                   {students.map((s) => {
                     const map = mappings.find((x) => x.student?._id === s._id);
+                    const hasPlan = planIds.has(String(s._id));
                     return (
                       <tr key={s._id}>
                         <td className="td">{s.registrationNo}</td>
@@ -183,7 +187,10 @@ export default function HodClient({ me }) {
                         <td className="td">{s.latestCGPA ?? '—'}</td>
                         <td className="td"><Badge tone={riskTone(s.riskLevel)}>{s.riskLevel}</Badge></td>
                         <td className="td">{map ? map.mentor?.name : <Badge tone="amber">Unmapped</Badge>}</td>
-                        <td className="td"><Btn variant="ghost" className="py-1" onClick={() => setPlanStudent(s)}>Set plan</Btn></td>
+                        <td className="td whitespace-nowrap">
+                          <Badge tone={hasPlan ? 'green' : 'amber'}>{hasPlan ? 'Set' : 'Missing'}</Badge>
+                          <Btn variant="ghost" className="py-1 ml-1" onClick={() => setPlanStudent(s)}>{hasPlan ? 'Edit' : 'Set plan'}</Btn>
+                        </td>
                       </tr>
                     );
                   })}
@@ -228,7 +235,7 @@ export default function HodClient({ me }) {
       {tab === 'branch' && <BranchDecisions show={show} />}
 
       <Modal open={!!planStudent} onClose={() => setPlanStudent(null)} title={planStudent ? `Credit Plan — ${planStudent.name}` : ''} wide>
-        {planStudent && <CreditPlanEditor student={planStudent} onClose={() => setPlanStudent(null)} show={show} />}
+        {planStudent && <CreditPlanEditor student={planStudent} onClose={() => { setPlanStudent(null); load(); }} show={show} />}
       </Modal>
 
       <Modal open={showMentor} onClose={() => { setShowMentor(false); setCreds(null); }} title="Add Faculty Mentor">
