@@ -4,7 +4,10 @@ import { Badge } from '@/components/ui';
 function Bar({ pct, tone = '#0b5d3b' }) {
   return (
     <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden">
-      <div className="h-2.5 rounded-full" style={{ width: `${Math.max(0, Math.min(100, pct))}%`, backgroundColor: tone }} />
+      <div
+        className="h-2.5 rounded-full progress-bar"
+        style={{ width: `${Math.max(0, Math.min(100, pct))}%`, backgroundColor: tone }}
+      />
     </div>
   );
 }

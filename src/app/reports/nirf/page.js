@@ -1,14 +1,38 @@
 'use client';
 import { useEffect, useState } from 'react';
 import ReportHeader, { Row, Signature } from '@/components/ReportHeader';
+import { Spinner } from '@/components/ui';
 
 export default function NirfReport() {
   const [r, setR] = useState(null);
-  useEffect(() => { fetch('/api/reports/nirf').then((x) => x.json()).then((d) => setR(d.report)); }, []);
-  if (!r) return <div className="p-10 text-center text-gray-400">Loading report…</div>;
+  const [err, setErr] = useState('');
+  useEffect(() => {
+    fetch('/api/reports/nirf')
+      .then((x) => x.json())
+      .then((d) => {
+        if (!d.report) throw new Error(d.error || 'Failed to load report');
+        setR(d.report);
+      })
+      .catch((e) => setErr(e.message || 'Failed to load report'));
+  }, []);
+  if (err) {
+    return (
+      <div className="p-10 text-center animate-fade-up">
+        <div className="text-red-600 text-sm mb-3">{err}</div>
+        <button type="button" className="btn-ghost" onClick={() => window.location.reload()}>Retry</button>
+      </div>
+    );
+  }
+  if (!r) {
+    return (
+      <div className="p-10 text-center text-gray-500 text-sm animate-fade-in flex items-center justify-center gap-2">
+        <Spinner /> Loading NIRF report…
+      </div>
+    );
+  }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white">
+    <div className="max-w-4xl mx-auto p-6 bg-white animate-fade-up">
       <ReportHeader
         title="NIRF — Graduation Outcomes (GO) Report"
         subtitle="Parameter 3: Graduation Outcomes  ·  GO = GPH + GUE + GMS"
