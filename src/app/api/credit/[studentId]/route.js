@@ -7,6 +7,8 @@ import { getSession } from '@/lib/auth';
 import { json, error } from '@/lib/apiGuard';
 import { canAccessStudent } from '@/lib/access';
 import { computeProgress } from '@/lib/creditEngine';
+import LearnerCriteria from '@/models/LearnerCriteria';
+import { classifyStudent, cohortPercentiles, defaultCriteria, suggestedActions } from '@/lib/learnerEngine';
 
 export async function GET(req, { params }) {
   const session = await getSession();
@@ -15,46 +17,33 @@ export async function GET(req, { params }) {
   if (!(await canAccessStudent(session, params.studentId))) return error('Forbidden', 403);
 
   const student = await StudentProfile.findById(params.studentId)
-    .select('name registrationNo programme currentSemester department school batch').lean();
+    .select('name registrationNo programme currentSemester department school batch latestCGPA liveBacklogs attendancePercent attainments learnerOverride learnerCategory').lean();
   if (!student) return error('Student not found', 404);
 
-  const [plan, gradesheets, baskets] = await Promise.all([
+  const [plan, gradesheets, baskets, criteria, cohort] = await Promise.all([
     CreditPlan.findOne({ student: params.studentId }).lean(),
     Gradesheet.find({ student: params.studentId }).select('-fileData').sort({ createdAt: 1 }).lean(),
     Basket.find({ department: student.department, isActive: true }).sort({ order: 1, name: 1 }).lean(),
+    LearnerCriteria.findOne({ department: student.department }).lean(),
+    StudentProfile.find({ department: student.department }).select('latestCGPA').lean(),
   ]);
 
-  const verified = gradesheets.filter((g) => g.status === 'VERIFIED');
-  const pending = gradesheets.filter((g) => g.status !== 'VERIFIED');
-
-  // Official tracker uses mentor-verified gradesheets only.
   const progress = computeProgress({
     plan,
-    gradesheets: verified,
+    gradesheets,
     baskets,
     currentSemester: student.currentSemester,
   });
 
-  // Provisional view includes unverified uploads so mentors can preview before verify.
-  const provisional = pending.length
-    ? computeProgress({
-      plan,
-      gradesheets,
-      baskets,
-      currentSemester: student.currentSemester,
-    })
-    : null;
+  const pct = cohortPercentiles(cohort).get(String(student._id));
+  let learner;
+  if (student.learnerOverride?.category) {
+    learner = { category: student.learnerOverride.category, basis: [`Set by mentor: ${student.learnerOverride.reason || 'manual override'}`], overridden: true };
+  } else {
+    learner = classifyStudent(student, criteria || defaultCriteria(), pct);
+  }
+  learner.actions = suggestedActions(learner.category);
+  learner.usedDefaults = !criteria;
 
-  return json({
-    student,
-    plan: plan || null,
-    baskets,
-    gradesheets,
-    progress: {
-      ...progress,
-      verifiedSheets: verified.length,
-      pendingSheets: pending.length,
-      provisional,
-    },
-  });
+  return json({ student, plan: plan || null, baskets, gradesheets, progress, learner });
 }

@@ -1,0 +1,39 @@
+# One-command PoC:  docker compose up --build
+# MongoDB data is stored in a NAMED VOLUME (mongo_data) so it PERSISTS across
+# restarts — nothing is lost when you stop and start the stack again.
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo_data:/data/db          # <-- persistent storage
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.runCommand({ ping: 1 })"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  app:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      mongo:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    environment:
+      APP_URL: http://localhost:3000
+      APP_NAME: "CUTM Mentor-Mentee Platform"
+      NODE_ENV: production
+      MONGODB_URI: mongodb://mongo:27017/cutm_mentoring
+      # A FIXED secret keeps everyone signed in across restarts.
+      # Change this to your own long random value before any real use.
+      JWT_SECRET: "cutm-demo-fixed-secret-change-me-for-production-0123456789abcdef"
+      SESSION_TTL: "28800"
+      SEED_ADMIN_NAME: "System Administrator"
+      SEED_ADMIN_EMAIL: "admin@cutm.ac.in"
+      SEED_ADMIN_PASSWORD: "Admin@12345"
+      SCHEDULE_TZ: "Asia/Kolkata"
+
+volumes:
+  mongo_data:

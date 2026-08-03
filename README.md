@@ -43,30 +43,51 @@ ADMIN ──► DEAN ──► HoD ──► FACULTY MENTOR ──► STUDENT ME
 
 ---
 
-## 2. Quick start (local)
+## 2. Quick start
 
-**Prerequisites:** Node.js ≥ 18.18, a MongoDB instance (local or MongoDB Atlas).
+### Option A — one command, fully working demo (recommended for a PoC)
+
+Requires Docker. This starts MongoDB **with persistent storage** and the app, and
+loads a populated demo so management sees real data immediately:
 
 ```bash
-# 1. Install dependencies
-npm install
-
-# 2. Configure environment
-cp .env.example .env
-#   → edit .env: set MONGODB_URI, JWT_SECRET, SMTP_*, SEED_ADMIN_*  (that's it)
-
-# 3. Create the first Admin (add --demo for sample school/dept/mentor/students)
-npm run seed            # or:  npm run seed -- --demo
-
-# 4. Run
-npm run dev             # http://localhost:3000
+docker compose up --build      # → http://localhost:3000
 ```
 
-Log in at `/login` with the `SEED_ADMIN_EMAIL` / `SEED_ADMIN_PASSWORD` from `.env`.
-You will be asked to set a new password on first login.
+Because MongoDB uses a named volume, **your data survives restarts** — stop and start
+the stack as often as you like without losing anything. Demo logins (all use password
+`Cutm@1234`, except the admin):
+
+| Role | Email | Password |
+|---|---|---|
+| Admin | `admin@cutm.ac.in` | `Admin@12345` |
+| Dean | `dean.soet@cutm.ac.in` | `Cutm@1234` |
+| HoD | `hod.cse@cutm.ac.in` | `Cutm@1234` |
+| Mentor | `mentor.cse@cutm.ac.in` | `Cutm@1234` |
+
+Demo accounts are **not** forced to change their password, so these keep working.
+
+### Option B — local Node (no Docker)
+
+**Prerequisites:** Node.js ≥ 18.18 and a MongoDB instance (local or Atlas).
+
+```bash
+npm install
+npm run setup          # creates .env and a strong, STABLE JWT secret for you
+#   → edit .env: point MONGODB_URI at your database
+npm run demo           # setup + a fully populated demo   (or: npm run seed for admin only)
+npm run dev            # → http://localhost:3000
+```
+
+> **Why `npm run setup`?** It generates and persists `JWT_SECRET`. A missing or
+> changing secret is the classic cause of users getting silently signed out (which
+> looks like "my data disappeared"). Setting it once and keeping it fixed prevents that.
+
+The real Admin (`SEED_ADMIN_EMAIL`) is asked to set a new password on first login;
+this is a one-time security step, not a recurring one.
 
 > **“Edit credentials and it goes live.”** Everything the platform needs is in
-> `.env.example`. Copy it to `.env`, fill in real values, and the app runs — no code changes.
+> `.env.example`. Copy it to `.env` (or run `npm run setup`), fill in real values, and the app runs — no code changes.
 
 ---
 

@@ -227,3 +227,74 @@ function Section({ title, children }) {
     </div>
   );
 }
+
+/* ============ Learner classification policy (HoD) — NAAC 2.2.1 ============ */
+export function LearnerCriteriaEditor({ show }) {
+  const [c, setC] = useState(null);
+  const [saved, setSaved] = useState(false);
+
+  async function load() {
+    const d = await fetch('/api/learner-criteria').then((r) => r.json());
+    setC(d.criteria || d.defaults);
+  }
+  useEffect(() => { load(); }, []);
+
+  function set(k, v) { setC((p) => ({ ...p, [k]: v })); setSaved(false); }
+
+  async function save() {
+    const res = await fetch('/api/learner-criteria', { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(c) });
+    const d = await res.json();
+    if (!res.ok) return show(d.error || 'Failed');
+    setSaved(true); show('Learner policy saved');
+  }
+
+  if (!c) return <Card title="Learner Classification Policy"><div className="text-gray-400 text-sm">Loading…</div></Card>;
+
+  const num = (k, label, step = '0.1') => (
+    <div><label className="label">{label}</label><input className="input" type="number" step={step} value={c[k] ?? ''} onChange={(e) => set(k, Number(e.target.value))} /></div>
+  );
+  const chk = (k, label) => (
+    <label className="flex items-center gap-2 text-sm py-1"><input type="checkbox" checked={!!c[k]} onChange={(e) => set(k, e.target.checked)} /> {label}</label>
+  );
+
+  return (
+    <Card title="Learner Classification Policy" actions={<span className="text-xs text-gray-500">NAAC 2.2.1 — slow & advanced learners</span>}>
+      <p className="text-sm text-gray-600 mb-4">These criteria decide how the system flags each student as a <b>slow</b>, <b>average</b> or <b>advanced</b> learner. They are your documented methodology for accreditation — keep them realistic and, ideally, ratified by your Academic Council.</p>
+      <div className="grid md:grid-cols-2 gap-5">
+        <div className="space-y-3 border border-gray-200 rounded-xl p-4">
+          <div className="font-semibold text-sm text-gray-800">Thresholds</div>
+          <div><label className="label">Mode</label>
+            <select className="input" value={c.mode} onChange={(e) => set('mode', e.target.value)}>
+              <option value="ABSOLUTE">Absolute cut-offs only</option>
+              <option value="PERCENTILE">Cohort percentile only</option>
+              <option value="HYBRID">Hybrid (either condition)</option>
+            </select>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            {num('cgpaSlowBelow', 'Slow if CGPA below')}
+            {num('cgpaAdvancedAtLeast', 'Advanced if CGPA ≥')}
+            {num('slowPercentile', 'Slow if bottom %', '1')}
+            {num('advancedPercentile', 'Advanced if top (100−%)', '1')}
+            {num('attendanceMin', 'Min attendance %', '1')}
+            {num('attainmentSlowBelow', 'Slow if CO/PO attainment <', '0.1')}
+          </div>
+        </div>
+        <div className="space-y-3">
+          <div className="border border-gray-200 rounded-xl p-4 space-y-1">
+            <div className="font-semibold text-sm text-gray-800 mb-1">Signals to consider</div>
+            {chk('considerBacklogs', 'Any live backlog marks a student as slow')}
+            {chk('considerAttendance', 'Low attendance marks a student as slow')}
+            {chk('considerAttainment', 'Low CO/PO attainment marks a student as slow (NBA)')}
+          </div>
+          <div><label className="label">Policy note (shown on the report)</label><textarea className="input" rows={4} value={c.policyNote || ''} onChange={(e) => set('policyNote', e.target.value)} /></div>
+          <div><label className="label">Ratified by (optional)</label><input className="input" placeholder="Academic Council, 12 Jun 2026" value={c.ratifiedBy || ''} onChange={(e) => set('ratifiedBy', e.target.value)} /></div>
+        </div>
+      </div>
+      <div className="flex items-center gap-3 mt-4">
+        <button className="btn-primary" onClick={save}>Save policy</button>
+        <a className="btn-ghost" href="/api/reports/learners?format=xlsx">Download learner report (Excel)</a>
+        {saved && <span className="text-green-600 text-sm">✓ Saved</span>}
+      </div>
+    </Card>
+  );
+}

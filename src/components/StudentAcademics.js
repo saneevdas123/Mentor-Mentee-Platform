@@ -84,10 +84,7 @@ export default function StudentAcademics({ student, show }) {
       )}
 
       {/* Credit tracker */}
-      <Card
-        title="Credit Tracker (CBCS)"
-        actions={sid ? <a className="btn-ghost" href={`/api/reports/interactions?studentId=${sid}`}>Download my interaction report</a> : null}
-      >
+      <Card title="Credit Tracker (CBCS)">
         <CreditTracker progress={data?.progress} />
       </Card>
 
@@ -154,7 +151,7 @@ export default function StudentAcademics({ student, show }) {
             <div key={b._id} className="border border-gray-200 rounded-lg p-3">
               <div className="flex items-center justify-between">
                 <div className="font-medium text-sm">{b.currentProgramme || '—'} → <span className="text-brand">{b.requestedProgramme}</span></div>
-                <Badge tone={statusTone(b.status)}>{b.status.replace(/_/g, ' ')}</Badge>
+                <Badge tone={statusTone(b.status)}>{b.status.replace('_', ' ')}</Badge>
               </div>
               {b.reason && <div className="text-sm text-gray-600 mt-1">{b.reason}</div>}
               {b.mentorRemarks && <div className="text-sm mt-2 bg-brand-light rounded p-2"><b>Mentor:</b> {b.mentorRemarks} — {b.mentorRecommends ? 'Recommended' : 'Not recommended'}</div>}

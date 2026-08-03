@@ -147,6 +147,19 @@ const StudentProfileSchema = new mongoose.Schema(
 
     // Mentoring status
     riskLevel: { type: String, enum: ['LOW', 'MEDIUM', 'HIGH'], default: 'LOW' }, // at-risk flag (NBA)
+
+    // Slow / advanced learner classification (NAAC 2.2.1)
+    learnerCategory: { type: String, enum: ['ADVANCED', 'AVERAGE', 'SLOW', 'UNSET'], default: 'UNSET', index: true },
+    learnerBasis: { type: [String], default: [] },
+    learnerScore: { type: Number },
+    learnerComputedAt: { type: Date },
+    learnerOverride: {
+      category: { type: String, enum: ['ADVANCED', 'AVERAGE', 'SLOW'] },
+      reason: String,
+      by: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+      byName: String,
+      at: Date,
+    },
     status: { type: String, enum: ['ACTIVE', 'GRADUATED', 'DROPPED', 'DETAINED', 'ON_LEAVE'], default: 'ACTIVE' },
 
     updatedByMentorAt: Date,
