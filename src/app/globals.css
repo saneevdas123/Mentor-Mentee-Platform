@@ -964,7 +964,13 @@ html.js-landing .reveal.is-in {
   }
 
   .table-wrap {
-    @apply overflow-x-auto rounded-neo border-2 border-ink bg-white;
+    @apply overflow-x-auto rounded-xl border border-ink/10 bg-white;
+  }
+  .table-wrap table thead th {
+    @apply bg-cream/60;
+  }
+  .table-wrap table tbody tr:hover td {
+    background: rgba(20, 20, 20, 0.02);
   }
 
   /* Nested surfaces inside cards — hairline only, no hard neo frame */
