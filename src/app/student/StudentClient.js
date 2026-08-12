@@ -112,7 +112,7 @@ export default function StudentClient({ me }) {
         <Card title="My Issues" actions={<button className="btn-primary" onClick={() => setShowIssue(true)}>+ Raise Issue</button>}>
           <div className="space-y-2">
             {issues.map((i) => (
-              <div key={i._id} className="border-2 border-ink rounded-xl p-3 bg-white shadow-hard-sm">
+              <div key={i._id} className="ui-nest p-3">
                 <div className="flex items-center justify-between">
                   <div className="font-semibold">{i.subject}</div>
                   <Badge tone={statusTone(i.status)}>{i.status}</Badge>

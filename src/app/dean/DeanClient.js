@@ -200,7 +200,7 @@ export default function DeanClient({ me }) {
         {creds ? (
           <div className="ui-form-stack">
             <p className="text-sm text-ink/65">Account created. Save these credentials — they were also emailed.</p>
-            <div className="bg-accent-yellow border-2 border-ink rounded-xl p-3 shadow-hard-sm text-sm space-y-1">
+            <div className="ui-callout-warn p-3 text-sm space-y-1">
               <div><span className="text-ink/55">Email:</span> <b>{creds.email}</b></div>
               <div><span className="text-ink/55">Temp password:</span> <b>{creds.pass}</b></div>
             </div>

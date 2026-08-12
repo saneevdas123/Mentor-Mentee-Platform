@@ -274,7 +274,7 @@ export default function HodClient({ me }) {
         {creds ? (
           <div className="ui-form-stack">
             <p className="text-sm text-ink/65">Account created. Save these credentials — they were also emailed.</p>
-            <div className="bg-accent-yellow border-2 border-ink rounded-xl p-3 text-sm shadow-hard-sm space-y-1">
+            <div className="ui-callout-warn p-3 text-sm space-y-1">
               <div><span className="text-ink/55">Email:</span> <b>{creds.email}</b></div>
               <div><span className="text-ink/55">Temp password:</span> <b>{creds.pass}</b></div>
             </div>
@@ -360,7 +360,7 @@ export default function HodClient({ me }) {
             <Field label="Excel file (.xlsx)" hint="Use the template columns for a clean import.">
               <input className="input" type="file" accept=".xlsx" required onChange={(e) => setFile(e.target.files[0])} />
             </Field>
-            <label className="flex items-start gap-2.5 text-sm leading-snug border-2 border-ink/15 rounded-xl p-3 bg-white">
+            <label className="flex items-start gap-2.5 text-sm leading-snug border border-ink/10 rounded-xl p-3 bg-white">
               <input type="checkbox" className="mt-0.5" checked={issueCreds} onChange={(e) => setIssueCreds(e.target.checked)} />
               <span>Issue login credentials to students (emails them)</span>
             </label>
@@ -369,13 +369,13 @@ export default function HodClient({ me }) {
         ) : (
           <div className="ui-form-stack text-sm">
             <div className="grid grid-cols-2 gap-2">
-              <div className="bg-accent-mint border-2 border-ink rounded-xl p-2 shadow-hard-sm">Created: <b>{importResult.created}</b></div>
-              <div className="bg-accent-peach border-2 border-ink rounded-xl p-2 shadow-hard-sm">Updated: <b>{importResult.updated}</b></div>
-              <div className="bg-accent-yellow border-2 border-ink rounded-xl p-2 shadow-hard-sm">Mapped: <b>{importResult.mapped}</b></div>
-              <div className="bg-accent-pink border-2 border-ink rounded-xl p-2 shadow-hard-sm">Credentials: <b>{importResult.credentialsIssued}</b></div>
+              <div className="ui-callout-ok p-2">Created: <b>{importResult.created}</b></div>
+              <div className="ui-callout-soft p-2">Updated: <b>{importResult.updated}</b></div>
+              <div className="ui-callout-warn p-2">Mapped: <b>{importResult.mapped}</b></div>
+              <div className="ui-callout p-2 bg-accent-pink/90">Credentials: <b>{importResult.credentialsIssued}</b></div>
             </div>
             {importResult.errors?.length > 0 && (
-              <div className="bg-accent-pink border-2 border-ink rounded-xl p-2 max-h-40 overflow-y-auto shadow-hard-sm">
+              <div className="ui-callout p-2 max-h-40 overflow-y-auto bg-accent-pink/90">
                 <div className="font-bold text-ink mb-1">{importResult.errors.length} issue(s):</div>
                 {importResult.errors.map((e, i) => <div key={i} className="text-brand-dark">Row {e.row}: {e.error}</div>)}
               </div>
@@ -401,7 +401,7 @@ export default function HodClient({ me }) {
           </Field>
           <div>
             <div className="label"><span>Students</span><span className="ui-field-optional">{mapStudents.length} selected</span></div>
-            <div className="border-2 border-ink rounded-xl max-h-64 overflow-y-auto divide-y divide-ink/10 bg-white shadow-hard-sm">
+            <div className="ui-nest max-h-64 overflow-y-auto divide-y divide-ink/10">
               {students.map((s) => {
                 const checked = mapStudents.includes(s._id);
                 const map = mappings.find((x) => x.student?._id === s._id);

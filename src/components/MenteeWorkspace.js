@@ -99,7 +99,7 @@ export default function MenteeWorkspace({ student, onClose }) {
 /* ---------- Gradesheets ---------- */
 function GradesheetList({ gradesheets, onReview }) {
   if (!gradesheets.length) {
-    return <div className="text-sm text-ink/55 bg-accent-yellow border-2 border-ink rounded-neo p-4 shadow-hard-sm">No gradesheets uploaded yet. Use “Ask student for gradesheet” on the Credit Tracker tab.</div>;
+    return <div className="text-sm text-ink/55 ui-callout-warn p-4">No gradesheets uploaded yet. Use “Ask student for gradesheet” on the Credit Tracker tab.</div>;
   }
   return (
     <div className="table-wrap"><table className="w-full text-sm">
@@ -127,12 +127,12 @@ function GradesheetReview({ gs, baskets, onClose, onVerify }) {
   const unmapped = lines.filter((l) => !l.basket).length;
   return (
     <div className="fixed inset-0 z-50 bg-ink/50 flex items-center justify-center p-4 no-print" onClick={onClose}>
-      <div className="bg-cream border-2 border-ink shadow-hard-lg rounded-neo max-w-3xl w-full max-h-[85vh] overflow-y-auto p-5" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-[#FFFcf7] border border-ink/10 rounded-xl shadow-lg max-w-3xl w-full max-h-[85vh] overflow-y-auto p-5" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-2">
           <div className="font-bold text-ink">Review — {gs.title}</div>
           <a className="text-brand font-semibold underline text-sm" href={`/api/gradesheets/${gs._id}/file`} target="_blank" rel="noreferrer">Open original PDF</a>
         </div>
-        {gs.parseWarning && <div className="bg-accent-yellow border-2 border-ink text-ink text-xs rounded-xl p-2 mb-2 shadow-hard-sm">{gs.parseWarning}</div>}
+        {gs.parseWarning && <div className="ui-callout-warn text-ink text-xs p-2 mb-2">{gs.parseWarning}</div>}
         <p className="text-xs text-ink/55 mb-3">Confirm each course’s basket. Auto-detected mappings are pre-filled; fix any marked “Select…”. Your corrections are remembered for future uploads. Only passing grades earn credit.</p>
         <table className="w-full text-sm">
           <thead><tr><th className="th">Course</th><th className="th">Title</th><th className="th">Cr</th><th className="th">Grade</th><th className="th">Basket</th></tr></thead>
@@ -190,7 +190,7 @@ function CounsellingPanel({ studentId, baskets, records, recommendations, onSave
   return (
     <div className="grid md:grid-cols-2 gap-4">
       {/* New note */}
-      <form onSubmit={save} className="space-y-3 border-2 border-ink rounded-neo p-4 bg-white shadow-hard-sm">
+      <form onSubmit={save} className="space-y-3 ui-nest p-4">
         <div className="flex items-center justify-between">
           <div className="font-semibold text-ink text-sm">Record a counselling session</div>
           <button type="button" className="text-xs text-brand underline" onClick={prefillFromTracker}>Pre-fill from tracker</button>
@@ -230,7 +230,7 @@ function CounsellingPanel({ studentId, baskets, records, recommendations, onSave
         <div className="font-semibold text-ink text-sm">History</div>
         <div className="space-y-2 max-h-[26rem] overflow-y-auto pr-1">
           {records.map((r) => (
-            <div key={r._id} className="border-2 border-ink rounded-xl p-3 bg-white shadow-hard-sm">
+            <div key={r._id} className="ui-nest p-3">
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-sm">{r.subject || kindLabel(r.kind)}</span>
                 <Badge tone={r.kind === 'BRANCH_CHANGE' ? 'blue' : r.kind === 'CREDIT_COUNSELLING' ? 'green' : 'gray'}>{kindLabel(r.kind)}</Badge>
@@ -270,12 +270,12 @@ function BranchPanel({ student, firstYear, requests, onSaved, show }) {
   return (
     <div className="space-y-3">
       {!firstYear && (
-        <div className="bg-accent-peach border-2 border-ink text-ink/80 text-sm rounded-neo p-3 shadow-hard-sm">
+        <div className="ui-callout-soft text-ink/80 text-sm p-3">
           Branch change is only applicable to first-year students (semester 1–2). This mentee is in semester {student.currentSemester || '—'}.
         </div>
       )}
       {requests.map((r) => (
-        <div key={r._id} className="border-2 border-ink rounded-neo p-4 bg-white shadow-hard-sm">
+        <div key={r._id} className="ui-nest p-4">
           <div className="flex items-center justify-between">
             <div className="font-medium">{r.currentProgramme || '—'} → <span className="text-brand">{r.requestedProgramme}</span></div>
             <Badge tone={statusTone(r.status)}>{r.status.replace('_', ' ')}</Badge>
@@ -333,7 +333,7 @@ function LearningLevel({ student, learner, onSaved, show }) {
 
   if (!learner) return null;
   return (
-    <div className={`border-2 border-ink rounded-neo p-4 shadow-hard-sm ${tones[learner.category] || tones.AVERAGE}`}>
+    <div className={`ui-nest p-4 ${tones[learner.category] || tones.AVERAGE}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <span className="font-bold text-ink">Learning level:</span>
@@ -352,7 +352,7 @@ function LearningLevel({ student, learner, onSaved, show }) {
         </div>
       )}
       {editing && (
-        <div className="mt-3 space-y-2 bg-white border-2 border-ink rounded-xl p-3 shadow-hard-sm">
+        <div className="mt-3 space-y-2 ui-nest p-3">
           <div className="flex gap-2">
             {['ADVANCED', 'AVERAGE', 'SLOW'].map((k) => (
               <button key={k} className={cat === k ? 'btn-primary py-1' : 'btn-ghost py-1'} onClick={() => setCat(k)}>{labels[k]}</button>

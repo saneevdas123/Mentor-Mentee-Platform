@@ -40,7 +40,7 @@ export function BasketManager({ show }) {
   return (
     <Card title="CBCS Baskets" actions={<span className="text-xs text-ink/55">Define the credit buckets used across your department</span>}>
       <div className="grid md:grid-cols-2 gap-5">
-        <form onSubmit={save} className="space-y-3 border-2 border-ink rounded-neo p-4 bg-white shadow-hard-sm">
+        <form onSubmit={save} className="space-y-3 ui-nest p-4">
           <div className="font-bold text-sm text-ink">{editingId ? 'Edit basket' : 'Add a basket'}</div>
           <div className="grid grid-cols-2 gap-2">
             <Field label="Name *"><input className="input" placeholder="Program Core" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></Field>
@@ -60,7 +60,7 @@ export function BasketManager({ show }) {
           <div className="font-semibold text-sm text-ink mb-2">Baskets ({baskets.length})</div>
           <div className="space-y-2 max-h-[24rem] overflow-y-auto pr-1">
             {baskets.map((b) => (
-              <div key={b._id} className="flex items-center justify-between border-2 border-ink rounded-xl px-3 py-2 bg-cream shadow-hard-sm">
+              <div key={b._id} className="flex items-center justify-between ui-nest-muted px-3 py-2">
                 <div>
                   <div className="text-sm font-medium">{b.name} {b.code && <span className="text-ink/40">({b.code})</span>}</div>
                   <div className="text-xs text-ink/40">Default {b.defaultCredits || 0} cr{b.aliases?.length ? ` · aliases: ${b.aliases.join(', ')}` : ''}</div>
@@ -124,7 +124,7 @@ export function CreditPlanEditor({ student, onClose, show }) {
   return (
     <div className="space-y-3">
       <div className="text-sm text-ink/55">Set how many credits <b>{student.name}</b> must earn in each basket. Seeded from basket defaults — adjust as needed.</div>
-      {!baskets.length && <div className="bg-accent-yellow border-2 border-ink text-ink text-sm rounded-neo p-3 shadow-hard-sm">No baskets exist yet. Add baskets first (Baskets tab).</div>}
+      {!baskets.length && <div className="ui-callout-warn p-3 text-sm text-ink">No baskets exist yet. Add baskets first (Baskets tab).</div>}
       <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
         {lines.map((l, i) => (
           <div key={i} className="grid grid-cols-12 items-center gap-2">
@@ -178,7 +178,7 @@ export function BranchDecisions({ show }) {
       <div className="space-y-4">
         <Section title={`Ready for decision (${pending.length})`}>
           {pending.map((r) => (
-            <div key={r._id} className="border-2 border-ink rounded-neo p-4 bg-white shadow-hard-sm">
+            <div key={r._id} className="ui-nest p-4">
               <div className="flex items-center justify-between">
                 <div className="font-medium">{r.student?.name} <span className="text-ink/40 text-sm">{r.student?.registrationNo}</span></div>
                 <Badge tone={r.status === 'RECOMMENDED' ? 'green' : 'red'}>{r.status.replace('_', ' ')}</Badge>
@@ -261,7 +261,7 @@ export function LearnerCriteriaEditor({ show }) {
     <Card title="Learner Classification Policy" actions={<span className="text-xs text-ink/55">NAAC 2.2.1 — slow & advanced learners</span>}>
       <p className="text-sm text-ink/65 mb-4">These criteria decide how the system flags each student as a <b>slow</b>, <b>average</b> or <b>advanced</b> learner. They are your documented methodology for accreditation — keep them realistic and, ideally, ratified by your Academic Council.</p>
       <div className="grid md:grid-cols-2 gap-5">
-        <div className="space-y-3 border-2 border-ink rounded-neo p-4 bg-white shadow-hard-sm">
+        <div className="space-y-3 ui-nest p-4">
           <div className="font-semibold text-sm text-ink">Thresholds</div>
           <div><label className="label">Mode</label>
             <select className="input" value={c.mode} onChange={(e) => set('mode', e.target.value)}>
@@ -280,7 +280,7 @@ export function LearnerCriteriaEditor({ show }) {
           </div>
         </div>
         <div className="space-y-3">
-          <div className="border-2 border-ink rounded-neo p-4 space-y-1 bg-accent-mint shadow-hard-sm">
+          <div className="ui-callout-ok p-4 space-y-1">
             <div className="font-semibold text-sm text-ink mb-1">Signals to consider</div>
             {chk('considerBacklogs', 'Any live backlog marks a student as slow')}
             {chk('considerAttendance', 'Low attendance marks a student as slow')}

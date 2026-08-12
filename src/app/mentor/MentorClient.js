@@ -258,7 +258,7 @@ export default function MentorClient({ me }) {
       >
         {respondIssue && (
           <div className="ui-form-stack">
-            <div className="bg-white border-2 border-ink rounded-xl p-3 text-sm shadow-hard-sm">
+            <div className="ui-nest p-3 text-sm">
               <div className="font-medium">{respondIssue.subject}</div>
               <div className="text-ink/65 mt-1 leading-relaxed">{respondIssue.description}</div>
             </div>
@@ -297,12 +297,12 @@ function MinutesEditor({ m, onSave }) {
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
   return (
     <div className="ui-form-stack">
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm bg-white border-2 border-ink/15 rounded-xl p-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm ui-nest-muted p-3">
         <div><span className="text-ink/55">Title:</span> <b>{f.title}</b></div>
         <div><span className="text-ink/55">Held on:</span> <b>{f.heldOn ? new Date(f.heldOn).toLocaleString() : '—'}</b></div>
       </div>
       <Field label="Attendance" hint="Tick who was present.">
-        <div className="border-2 border-ink rounded-xl max-h-40 overflow-y-auto divide-y divide-ink/10 bg-white shadow-hard-sm">
+        <div className="ui-nest max-h-40 overflow-y-auto divide-y divide-ink/10">
           {f.attendees.map((a, i) => (
             <label key={i} className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-cream">
               <input type="checkbox" checked={!!a.present} onChange={(e) => { const arr = [...f.attendees]; arr[i] = { ...a, present: e.target.checked }; set('attendees', arr); }} />

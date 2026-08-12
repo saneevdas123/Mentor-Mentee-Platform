@@ -15,7 +15,7 @@ export default function CreditTracker({ progress }) {
   if (!progress) return null;
   if (!progress.hasPlan) {
     return (
-      <div className="bg-accent-yellow border-2 border-ink rounded-neo p-4 text-sm text-ink shadow-hard-sm">
+      <div className="ui-callout-warn p-4 text-sm text-ink">
         No credit plan has been set for this student yet. A Head of Department needs to define the basket-wise
         credit requirements before the tracker can show progress.
       </div>
@@ -61,7 +61,7 @@ export default function CreditTracker({ progress }) {
       </div>
 
       {p.recommendations.length > 0 && (
-        <div className="bg-accent-peach border-2 border-ink rounded-neo p-4 shadow-hard-sm">
+        <div className="ui-callout-soft p-4">
           <div className="font-bold text-ink mb-1 text-sm">To finish on time, focus next on:</div>
           <ul className="list-disc pl-5 text-sm text-ink/80 space-y-0.5">
             {p.recommendations.map((r, i) => (

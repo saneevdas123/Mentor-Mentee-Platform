@@ -78,7 +78,7 @@ export default function StudentAcademics({ student, show }) {
     <div className="space-y-4">
       {/* pending request banner */}
       {requests.length > 0 && (
-        <div className="bg-accent-yellow border-2 border-ink text-ink rounded-neo p-3 text-sm shadow-hard-sm font-medium">
+        <div className="ui-callout-warn p-3 text-sm text-ink font-medium">
           Your mentor has asked you to upload your latest gradesheet. Please upload the PDF below.
         </div>
       )}
@@ -122,7 +122,7 @@ export default function StudentAcademics({ student, show }) {
       <Card title="Counselling from my Mentor">
         <div className="space-y-2">
           {counsel.map((r) => (
-            <div key={r._id} className="border-2 border-ink rounded-xl p-3 bg-white shadow-hard-sm">
+            <div key={r._id} className="ui-nest p-3">
               <div className="flex items-center justify-between">
                 <span className="font-semibold text-sm">{r.subject || r.kind.replace(/_/g, ' ')}</span>
                 <Badge tone={r.kind === 'CREDIT_COUNSELLING' ? 'green' : r.kind === 'BRANCH_CHANGE' ? 'blue' : 'gray'}>{r.kind.replace(/_/g, ' ')}</Badge>
@@ -150,7 +150,7 @@ export default function StudentAcademics({ student, show }) {
         {firstYear && !branch.length && <p className="text-ink/40 text-sm">No branch-change request placed. If you wish to change your branch, raise a request — your mentor will counsel you first.</p>}
         <div className="space-y-2">
           {branch.map((b) => (
-            <div key={b._id} className="border-2 border-ink rounded-xl p-3 bg-white shadow-hard-sm">
+            <div key={b._id} className="ui-nest p-3">
               <div className="flex items-center justify-between">
                 <div className="font-semibold text-sm">{b.currentProgramme || '—'} → <span className="text-brand">{b.requestedProgramme}</span></div>
                 <Badge tone={statusTone(b.status)}>{b.status.replace('_', ' ')}</Badge>
@@ -166,7 +166,7 @@ export default function StudentAcademics({ student, show }) {
 
       {showBranch && (
         <div className="fixed inset-0 z-50 bg-ink/50 flex items-center justify-center p-4" onClick={() => setShowBranch(false)}>
-          <div className="bg-cream border-2 border-ink shadow-hard-lg rounded-neo max-w-md w-full p-5" onClick={(e) => e.stopPropagation()}>
+          <div className="bg-[#FFFcf7] border border-ink/10 rounded-xl max-w-md w-full p-5 shadow-lg" onClick={(e) => e.stopPropagation()}>
             <div className="font-bold mb-3 text-ink">Request Branch Change</div>
             <form onSubmit={submitBranch} className="space-y-3">
               <Field label="Requested programme / branch"><input className="input" required value={branchForm.requestedProgramme} onChange={(e) => setBranchForm({ ...branchForm, requestedProgramme: e.target.value })} /></Field>

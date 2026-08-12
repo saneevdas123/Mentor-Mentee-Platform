@@ -966,6 +966,26 @@ html.js-landing .reveal.is-in {
   .table-wrap {
     @apply overflow-x-auto rounded-neo border-2 border-ink bg-white;
   }
+
+  /* Nested surfaces inside cards — hairline only, no hard neo frame */
+  .ui-nest {
+    @apply border border-ink/10 rounded-xl bg-white;
+  }
+  .ui-nest-muted {
+    @apply border border-ink/10 rounded-xl bg-cream/70;
+  }
+  .ui-callout {
+    @apply border border-ink/10 rounded-xl;
+  }
+  .ui-callout-warn {
+    @apply border border-ink/10 rounded-xl bg-accent-yellow/90;
+  }
+  .ui-callout-soft {
+    @apply border border-ink/10 rounded-xl bg-accent-peach/90;
+  }
+  .ui-callout-ok {
+    @apply border border-ink/10 rounded-xl bg-accent-mint/90;
+  }
 }
 
 /* Print styles for NAAC/NIRF/NBA reports */
