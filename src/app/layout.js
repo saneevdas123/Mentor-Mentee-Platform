@@ -14,8 +14,12 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={outfit.variable}>
-      <body className="font-sans antialiased">{children}</body>
+    // suppressHydrationWarning: browser extensions (e.g. QuillBot) often inject
+    // attributes onto <html>/<body> before React hydrates, which is harmless noise.
+    <html lang="en" className={outfit.variable} suppressHydrationWarning>
+      <body className="font-sans antialiased" suppressHydrationWarning>
+        {children}
+      </body>
     </html>
   );
 }

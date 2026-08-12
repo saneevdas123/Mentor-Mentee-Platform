@@ -99,6 +99,33 @@ function SectionEyebrow({ children, dark }) {
   );
 }
 
+function FaqItem({ q, a, defaultOpen = false }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div className="land-card card bg-white overflow-hidden">
+      <button
+        type="button"
+        className="w-full text-left px-4 sm:px-5 py-4 flex items-start justify-between gap-3"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span className="font-bold text-[15px] leading-snug text-ink pr-2">{q}</span>
+        <span
+          className={`shrink-0 w-7 h-7 rounded-lg border-2 border-ink bg-cream flex items-center justify-center text-lg font-bold leading-none transition-transform ${open ? 'rotate-45 bg-accent-yellow' : ''}`}
+          aria-hidden
+        >
+          +
+        </span>
+      </button>
+      {open ? (
+        <div className="px-4 sm:px-5 pb-4 -mt-1">
+          <p className="text-sm text-ink/70 leading-relaxed border-t border-ink/10 pt-3">{a}</p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function useReveal(rootRef) {
   useEffect(() => {
     document.documentElement.classList.add('js-landing');
@@ -161,7 +188,7 @@ function useHeroTilt(ref) {
 const NAV = [
   { href: '#what', label: 'What you get' },
   { href: '#how', label: 'How it works' },
-  { href: '#skills', label: 'For mentors' },
+  { href: '#skills', label: 'Tips' },
   { href: '#faq', label: 'FAQ' },
 ];
 
@@ -256,17 +283,24 @@ export default function LandingClient() {
               <a
                 key={n.href}
                 href={n.href}
-                className="font-semibold py-2.5 border-b border-ink/10 last:border-0"
+                className="font-semibold py-2.5 border-b border-ink/10"
                 onClick={(e) => onHashNavClick(e, n.href, () => setMenuOpen(false))}
               >
                 {n.label}
               </a>
             ))}
+            <Link
+              href="/login"
+              className="btn-primary hero-cta-shine mt-2 !py-2.5 text-center"
+              onClick={() => setMenuOpen(false)}
+            >
+              Sign in
+            </Link>
           </nav>
         ) : null}
       </header>
 
-      <div className="bg-ink text-cream overflow-hidden border-b-2 border-ink">
+      <div className="bg-ink text-cream overflow-hidden border-b-2 border-ink" aria-hidden>
         <div className="flex whitespace-nowrap landing-marquee py-1.5 text-xs sm:text-sm">
           {ticker.map((t, i) => (
             <span key={i} className="mx-2 sm:mx-3 inline-flex items-center gap-2 sm:gap-3">
@@ -280,10 +314,13 @@ export default function LandingClient() {
       {/* Hero — one viewport composition (Monitor YT style) */}
       <section className="hero-stage max-w-6xl mx-auto px-3 sm:px-4 pt-6 pb-10 sm:pt-8 sm:pb-12 md:pt-10 md:pb-14 grid md:grid-cols-2 gap-6 md:gap-10 items-start md:items-center">
         <div className="relative z-10 min-w-0 md:pt-1">
-          <p className="hero-rise hero-d1 text-brand font-semibold italic text-[15px] mb-2">
-            for CUTM mentors &amp; mentees
+          <p className="hero-rise hero-d1 font-bold text-ink text-xl sm:text-2xl tracking-tight mb-1.5">
+            CUTM Mentoring
           </p>
-          <h1 className="hero-rise hero-d2 text-[1.75rem] sm:text-[2.35rem] md:text-[2.85rem] lg:text-[3.15rem] font-bold leading-[1.06] tracking-tight mb-3">
+          <p className="hero-rise hero-d1 text-brand font-semibold italic text-[15px] mb-2.5">
+            for mentors &amp; mentees on campus
+          </p>
+          <h1 className="hero-rise hero-d2 text-[1.65rem] sm:text-[2.2rem] md:text-[2.65rem] lg:text-[2.95rem] font-bold leading-[1.08] tracking-tight mb-3">
             One place for credits, counselling, and mentoring meetings.
           </h1>
           <p className="hero-rise hero-d3 text-ink/70 text-[15px] sm:text-base leading-relaxed mb-5 max-w-lg">
@@ -461,28 +498,13 @@ export default function LandingClient() {
 
       <section id="skills" className="max-w-6xl mx-auto px-3 sm:px-4 py-12 sm:py-16">
         <div className="reveal">
-          <SectionEyebrow>tips from how people use it</SectionEyebrow>
+          <SectionEyebrow>tips that stick</SectionEyebrow>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center tracking-tight mb-3">
             Make mentoring less messy.
           </h2>
           <p className="text-center text-ink/65 max-w-2xl mx-auto mb-8 sm:mb-10 text-[15px] sm:text-base">
-            A few habits go a long way: talk credits clearly, write a short note, check the sheet, and follow up on risk early.
+            Talk credits clearly, leave a short note, check the sheet once, and follow up on risk early.
           </p>
-        </div>
-
-        {/* Visual strip — unique images (not reused elsewhere) */}
-        <div className="reveal mb-6 sm:mb-8 grid grid-cols-2 gap-3 md:gap-4 max-w-2xl mx-auto">
-          {[
-            { src: '/landing/landing-skills-talk.png', label: 'Talk it through' },
-            { src: '/landing/landing-skills-notes.png', label: 'Write it down' },
-          ].map((v) => (
-            <div key={v.label} className="land-card card overflow-hidden bg-white">
-              <div className="land-card-media relative aspect-square border-b-2 border-ink bg-cream">
-                <Image src={v.src} alt={v.label} fill className="object-cover" sizes="(max-width:768px) 50vw, 280px" />
-              </div>
-              <div className="px-3 py-2 text-center text-xs md:text-sm font-bold">{v.label}</div>
-            </div>
-          ))}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
@@ -503,30 +525,16 @@ export default function LandingClient() {
         </div>
       </section>
 
-      <section id="faq" className="max-w-6xl mx-auto px-3 sm:px-4 py-12 sm:py-16">
+      <section id="faq" className="max-w-3xl mx-auto px-3 sm:px-4 py-12 sm:py-16">
         <div className="reveal">
           <SectionEyebrow>quick answers</SectionEyebrow>
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-center tracking-tight mb-8 sm:mb-10">
             Questions we hear on campus
           </h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+        <div className="reveal space-y-3">
           {FAQ.map((f, i) => (
-            <article
-              key={f.q}
-              className={`reveal reveal-d${(i % 3) + 1} land-card card p-4 sm:p-5 ${
-                i < 3
-                  ? i === 0
-                    ? 'bg-accent-yellow'
-                    : i === 1
-                      ? 'bg-accent-mint'
-                      : 'bg-accent-pink'
-                  : 'bg-white'
-              }`}
-            >
-              <h3 className="font-bold mb-2 text-[15px] leading-snug">{f.q}</h3>
-              <p className="text-sm text-ink/70 leading-relaxed">{f.a}</p>
-            </article>
+            <FaqItem key={f.q} q={f.q} a={f.a} defaultOpen={i === 0} />
           ))}
         </div>
       </section>

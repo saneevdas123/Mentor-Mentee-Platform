@@ -68,6 +68,9 @@ html.js-landing {
   animation: landing-marquee 28s linear infinite;
   width: max-content;
 }
+.landing-marquee:hover {
+  animation-play-state: paused;
+}
 
 /* Hero micro-motion — never hide content with opacity:0 (blank-page trap) */
 .hero-rise {
