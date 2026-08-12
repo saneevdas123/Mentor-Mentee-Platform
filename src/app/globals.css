@@ -117,6 +117,37 @@ html.js-landing {
   overflow-x: clip;
 }
 
+/* First viewport reads as one composition */
+.hero-fold {
+  min-height: calc(100svh - 7.5rem);
+}
+
+.ticker-eyes {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  width: auto;
+  height: auto;
+}
+.ticker-eyes::before,
+.ticker-eyes::after {
+  content: '';
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle at 50% 55%, #141414 2px, #fff 2.2px);
+  border: 1.5px solid #fff;
+  box-sizing: border-box;
+}
+
+@media (max-width: 767px) {
+  .hero-fold {
+    min-height: 0;
+  }
+}
+
 .hero-eyes-bob {
   /* kept for reduce-motion reset; unused on eye wrappers (transform fights pupils) */
   animation: hero-eyes-bob 3.2s ease-in-out infinite;

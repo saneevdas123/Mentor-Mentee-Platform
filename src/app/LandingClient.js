@@ -218,7 +218,7 @@ export default function LandingClient() {
     <div ref={pageRef} className="landing-page min-h-screen bg-cream text-ink overflow-x-hidden">
       <header className="sticky top-0 z-40 bg-cream/95 backdrop-blur border-b-2 border-ink">
         <div className="max-w-6xl mx-auto px-3 sm:px-4 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
-          <Logo size={22} />
+          <Logo size={24} />
           <nav className="hidden md:flex items-center gap-6 text-sm font-semibold">
             {NAV.map((n) => (
               <a
@@ -267,96 +267,93 @@ export default function LandingClient() {
       </header>
 
       <div className="bg-ink text-cream overflow-hidden border-b-2 border-ink">
-        <div className="flex whitespace-nowrap landing-marquee py-2 text-xs sm:text-sm">
+        <div className="flex whitespace-nowrap landing-marquee py-1.5 text-xs sm:text-sm">
           {ticker.map((t, i) => (
             <span key={i} className="mx-2 sm:mx-3 inline-flex items-center gap-2 sm:gap-3">
               <span className="opacity-90">{t}</span>
-              <span className="text-brand font-bold">•</span>
+              <span className="ticker-eyes" aria-hidden />
             </span>
           ))}
         </div>
       </div>
 
-      {/* Hero */}
-      <section className="hero-stage max-w-6xl mx-auto px-3 sm:px-4 py-12 sm:py-14 md:py-20 grid md:grid-cols-2 gap-10 md:gap-14 items-center">
+      {/* Hero — one viewport composition (Monitor YT style) */}
+      <section className="hero-stage hero-fold max-w-6xl mx-auto px-3 sm:px-4 py-8 sm:py-10 md:py-12 grid md:grid-cols-2 gap-8 md:gap-10 items-center">
         <div className="relative z-10 min-w-0">
-          <p className="hero-rise hero-d1 text-brand font-bold text-sm tracking-wide mb-3">for CUTM mentors &amp; mentees</p>
-          <h1 className="hero-rise hero-d2 text-[1.85rem] sm:text-4xl md:text-[3.35rem] font-bold leading-[1.08] tracking-tight mb-5">
+          <p className="hero-rise hero-d1 text-brand font-semibold italic text-[15px] mb-2 sm:mb-3">
+            for CUTM mentors &amp; mentees
+          </p>
+          <h1 className="hero-rise hero-d2 text-[1.75rem] sm:text-[2.35rem] md:text-[2.85rem] lg:text-[3.15rem] font-bold leading-[1.06] tracking-tight mb-3 sm:mb-4">
             One place for credits, counselling, and mentoring meetings.
           </h1>
-          <p className="hero-rise hero-d3 text-ink/70 text-[15px] sm:text-base md:text-lg leading-relaxed mb-6 max-w-xl">
-            Built for Centurion University. Mentors keep mentee work in one dashboard. Students see their credit plan.
+          <p className="hero-rise hero-d3 text-ink/70 text-[15px] sm:text-base leading-relaxed mb-5 sm:mb-6 max-w-lg">
+            Mentors keep mentee work in one dashboard. Students see their credit plan.
             When NAAC or IQAC asks for proof, the numbers are already here.
           </p>
-          <div className="hero-rise hero-d4 flex flex-wrap gap-2 mb-7">
-            {['Credit tracker', 'Meet + minutes', 'NAAC / NIRF / NBA'].map((chip) => (
-              <span key={chip} className="rounded-full border-2 border-ink bg-white px-3 py-1 text-xs font-bold shadow-hard-sm">
-                {chip}
-              </span>
-            ))}
-          </div>
-          <div className="hero-rise hero-d4 flex flex-col sm:flex-row flex-wrap gap-3 mb-4 w-full sm:w-auto">
-            <Link href="/login" className="btn-primary hero-cta-shine !px-6 !py-3 text-base text-center w-full sm:w-auto">
+          <div className="hero-rise hero-d4 flex flex-col sm:flex-row flex-wrap gap-2.5 sm:gap-3 mb-3 w-full sm:w-auto">
+            <Link href="/login" className="btn-primary hero-cta-shine !px-5 !py-2.5 sm:!px-6 sm:!py-3 text-[15px] sm:text-base text-center w-full sm:w-auto">
               Sign in to your account
             </Link>
             <a
               href="#how"
-              className="btn-ghost !px-6 !py-3 text-base text-center w-full sm:w-auto"
+              className="btn-ghost !px-5 !py-2.5 sm:!px-6 sm:!py-3 text-[15px] sm:text-base text-center w-full sm:w-auto"
               onClick={(e) => onHashNavClick(e, '#how')}
             >
               See how it works
             </a>
           </div>
-          <p className="hero-rise hero-d5 text-sm text-ink/55">No public signup. Your HoD or admin sends the login.</p>
+          <p className="hero-rise hero-d5 text-sm text-ink/55">
+            No public signup. Your HoD or admin sends the login.
+          </p>
         </div>
 
-        <div className="relative z-10 hero-panel w-full max-w-md mx-auto md:max-w-none md:mx-0 mt-6 sm:mt-8 md:mt-4 pt-2">
-          {/* Big hero eyes — a little air above the card */}
+        <div className="relative z-10 hero-panel w-full max-w-[22rem] sm:max-w-md mx-auto md:max-w-none md:mx-0">
+          {/* Peek eyes — same scale as Monitor YT */}
           <div
-            className="absolute -top-2 right-5 sm:-top-3 sm:right-7 z-30"
+            className="absolute -top-3 right-5 sm:-top-3.5 sm:right-6 z-30"
             data-hero-eyes="true"
           >
-            <GooglyEyes size={52} />
+            <GooglyEyes size={34} />
           </div>
           <div
             ref={tiltRef}
-            className="hero-tilt hero-float relative rounded-neo border-2 border-ink shadow-hard-lg p-5 md:p-6 bg-[radial-gradient(circle_at_1px_1px,#d6d0c4_1px,transparent_0)] [background-size:14px_14px] bg-accent-peach/50"
+            className="hero-tilt hero-float relative rounded-neo border-2 border-ink shadow-hard-lg p-3.5 sm:p-4 md:p-5 bg-[radial-gradient(circle_at_1px_1px,#d6d0c4_1px,transparent_0)] [background-size:14px_14px] bg-accent-peach/50"
           >
-            <div className="inline-flex items-center gap-2 bg-ink text-cream text-xs font-bold tracking-wider px-3 py-1.5 rounded-md mb-4 mt-1 shadow-hard-sm">
+            <div className="inline-flex items-center gap-2 bg-ink text-cream text-[10px] sm:text-xs font-bold tracking-wider px-2.5 py-1 rounded-md mb-3 shadow-hard-sm">
               <span className="hero-live-dot inline-block w-1.5 h-1.5 rounded-full bg-brand" />
               YOUR QUEUE
             </div>
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               <div
-                className="hero-card-float hero-feed-card relative bg-accent-yellow border-2 border-ink rounded-xl p-4 shadow-hard cursor-default"
+                className="hero-card-float hero-feed-card relative bg-accent-yellow border-2 border-ink rounded-xl p-3 sm:p-3.5 shadow-hard cursor-default"
                 style={{ '--hero-rot': '-1.5deg' }}
               >
-                <div className="tape absolute -top-2 left-1/2 w-12 h-3 bg-white/80 border border-ink/20 rounded-sm" />
-                <div className="text-xs font-bold uppercase tracking-wide mb-1">New gradesheet</div>
-                <div className="font-semibold text-sm">Sem 3 sheet uploaded — please check baskets</div>
-                <div className="text-xs text-ink/55 mt-1 inline-flex items-center gap-1.5">
+                <div className="tape absolute -top-1.5 left-1/2 w-10 h-2.5 bg-white/80 border border-ink/20 rounded-sm" />
+                <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wide mb-0.5">New gradesheet</div>
+                <div className="font-semibold text-[13px] sm:text-sm leading-snug">Sem 3 sheet uploaded — please check baskets</div>
+                <div className="text-[11px] text-ink/55 mt-1 inline-flex items-center gap-1.5">
                   <span className="hero-live-dot inline-block w-1.5 h-1.5 rounded-full bg-brand" />
                   just now · waiting on mentor
                 </div>
               </div>
               <div
-                className="hero-card-float hero-card-float-2 hero-feed-card relative bg-accent-mint border-2 border-ink rounded-xl p-4 shadow-hard cursor-default"
+                className="hero-card-float hero-card-float-2 hero-feed-card relative bg-accent-mint border-2 border-ink rounded-xl p-3 sm:p-3.5 shadow-hard cursor-default"
                 style={{ '--hero-rot': '1deg' }}
               >
-                <div className="tape absolute -top-2 left-1/2 w-12 h-3 bg-white/80 border border-ink/20 rounded-sm" />
-                <div className="text-xs font-bold uppercase tracking-wide mb-1">Credits updated</div>
-                <div className="text-sm line-through text-ink/45">12 credits still open in Program Core</div>
-                <div className="font-semibold text-sm">8 left · looking on track</div>
-                <div className="text-xs text-ink/55 mt-1">17 min ago · tracker refreshed</div>
+                <div className="tape absolute -top-1.5 left-1/2 w-10 h-2.5 bg-white/80 border border-ink/20 rounded-sm" />
+                <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wide mb-0.5">Credits updated</div>
+                <div className="text-[13px] sm:text-sm line-through text-ink/45 leading-snug">12 credits still open in Program Core</div>
+                <div className="font-semibold text-[13px] sm:text-sm leading-snug">8 left · looking on track</div>
+                <div className="text-[11px] text-ink/55 mt-1">17 min ago · tracker refreshed</div>
               </div>
               <div
-                className="hero-card-float hero-card-float-3 hero-feed-card relative bg-accent-pink border-2 border-ink rounded-xl p-4 shadow-hard cursor-default"
+                className="hero-card-float hero-card-float-3 hero-feed-card relative bg-accent-pink border-2 border-ink rounded-xl p-3 sm:p-3.5 shadow-hard cursor-default"
                 style={{ '--hero-rot': '-0.5deg' }}
               >
-                <div className="tape absolute -top-2 left-1/2 w-12 h-3 bg-white/80 border border-ink/20 rounded-sm" />
-                <div className="text-xs font-bold uppercase tracking-wide mb-1">Counselling note</div>
-                <div className="font-semibold text-sm">Take 4 credits in Skill Enhancement next sem</div>
-                <div className="text-xs text-ink/55 mt-1">2 hours ago · student can acknowledge</div>
+                <div className="tape absolute -top-1.5 left-1/2 w-10 h-2.5 bg-white/80 border border-ink/20 rounded-sm" />
+                <div className="text-[10px] sm:text-xs font-bold uppercase tracking-wide mb-0.5">Counselling note</div>
+                <div className="font-semibold text-[13px] sm:text-sm leading-snug">Take 4 credits in Skill Enhancement next sem</div>
+                <div className="text-[11px] text-ink/55 mt-1">2 hours ago · student can acknowledge</div>
               </div>
             </div>
           </div>
