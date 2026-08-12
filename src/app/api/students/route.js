@@ -1,6 +1,9 @@
 import dbConnect from '@/lib/db';
 import StudentProfile from '@/models/StudentProfile';
 import Mapping from '@/models/Mapping';
+// Register models used by populate()
+import '@/models/Department';
+import '@/models/School';
 import { getSession } from '@/lib/auth';
 import { json, error } from '@/lib/apiGuard';
 

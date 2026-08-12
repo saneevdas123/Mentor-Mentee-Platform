@@ -50,8 +50,8 @@ export default function DeanClient({ me }) {
 
   return (
     <Shell role="DEAN" name={me.name} nav={NAV}>
-      <h1 className="text-2xl font-bold mb-1">School Dashboard</h1>
-      <p className="text-gray-500 mb-6 text-sm">Add departments and provide access to Heads of Department.</p>
+      <h1 className="text-2xl font-bold mb-1 tracking-tight text-ink">School Dashboard</h1>
+      <p className="text-ink/55 mb-6 text-sm">Add departments and provide access to Heads of Department.</p>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Stat label="Departments" value={departments.length} />
@@ -66,7 +66,7 @@ export default function DeanClient({ me }) {
 
       {tab === 'departments' && (
         <Card title="Departments" actions={<button className="btn-primary" onClick={() => setShowDept(true)}>+ Add Department</button>}>
-          <div className="overflow-x-auto">
+          <div className="table-wrap">
             <table className="w-full">
               <thead><tr><th className="th">Name</th><th className="th">Code</th><th className="th">HoD</th><th className="th">Programmes</th><th className="th">Students</th></tr></thead>
               <tbody>
@@ -79,7 +79,7 @@ export default function DeanClient({ me }) {
                     <td className="td">{d.studentCount}</td>
                   </tr>
                 ))}
-                {!departments.length && <tr><td className="td text-gray-400" colSpan={5}>No departments yet.</td></tr>}
+                {!departments.length && <tr><td className="td text-ink/40" colSpan={5}>No departments yet.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -88,7 +88,7 @@ export default function DeanClient({ me }) {
 
       {tab === 'hods' && (
         <Card title="Heads of Department" actions={<button className="btn-primary" onClick={() => setShowHod(true)}>+ Provision HoD</button>}>
-          <div className="overflow-x-auto">
+          <div className="table-wrap">
             <table className="w-full">
               <thead><tr><th className="th">Name</th><th className="th">Email</th><th className="th">Department</th><th className="th">Last login</th></tr></thead>
               <tbody>
@@ -100,7 +100,7 @@ export default function DeanClient({ me }) {
                     <td className="td">{h.lastLoginAt ? new Date(h.lastLoginAt).toLocaleDateString() : <Badge tone="amber">Never</Badge>}</td>
                   </tr>
                 ))}
-                {!hods.length && <tr><td className="td text-gray-400" colSpan={4}>No HoDs yet.</td></tr>}
+                {!hods.length && <tr><td className="td text-ink/40" colSpan={4}>No HoDs yet.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -124,10 +124,10 @@ export default function DeanClient({ me }) {
       <Modal open={showHod} onClose={() => { setShowHod(false); setCreds(null); }} title="Provision HoD">
         {creds ? (
           <div className="space-y-3">
-            <p className="text-sm text-gray-600">Account created and credentials emailed.</p>
-            <div className="bg-brand-light rounded-lg p-3 text-sm">
-              <div><span className="text-gray-500">Email:</span> <b>{creds.email}</b></div>
-              <div><span className="text-gray-500">Temp password:</span> <b>{creds.pass}</b></div>
+            <p className="text-sm text-ink/65">Account created and credentials emailed.</p>
+            <div className="bg-accent-yellow border-2 border-ink rounded-xl p-3 shadow-hard-sm text-sm">
+              <div><span className="text-ink/55">Email:</span> <b>{creds.email}</b></div>
+              <div><span className="text-ink/55">Temp password:</span> <b>{creds.pass}</b></div>
             </div>
             <button className="btn-primary w-full" onClick={() => { setShowHod(false); setCreds(null); }}>Done</button>
           </div>

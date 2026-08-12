@@ -4,7 +4,8 @@ import { getSession } from '@/lib/auth';
 import { json, error } from '@/lib/apiGuard';
 import { canManageAcademics } from '@/lib/access';
 
-export async function PATCH(req, { params }) {
+export async function PATCH(req, context) {
+  const params = await context.params;
   const session = await getSession();
   if (!session) return error('Unauthorized', 401);
   if (!canManageAcademics(session)) return error('Forbidden', 403);
@@ -18,7 +19,8 @@ export async function PATCH(req, { params }) {
   return json({ ok: true, basket });
 }
 
-export async function DELETE(req, { params }) {
+export async function DELETE(req, context) {
+  const params = await context.params;
   const session = await getSession();
   if (!session) return error('Unauthorized', 401);
   if (!canManageAcademics(session)) return error('Forbidden', 403);

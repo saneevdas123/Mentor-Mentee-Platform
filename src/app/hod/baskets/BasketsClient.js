@@ -51,14 +51,14 @@ export default function BasketsClient({ me }) {
 
   return (
     <Shell role="HOD" name={me.name} nav={NAV}>
-      <h1 className="text-2xl font-bold mb-1">Credit Baskets</h1>
-      <p className="text-gray-500 mb-6 text-sm">
+      <h1 className="text-2xl font-bold mb-1 tracking-tight text-ink">Credit Baskets</h1>
+      <p className="text-ink/55 mb-6 text-sm">
         Define the CBCS baskets for your department (e.g. Program Core, Program Elective, Skill Enhancement, Foundation).
         The gradesheet parser uses these names — and any aliases — to recognise which basket each course belongs to.
       </p>
 
       <Card title={`Baskets (${baskets.length})`} actions={<button className="btn-primary" onClick={openNew}>+ Add Basket</button>}>
-        <div className="overflow-x-auto">
+        <div className="table-wrap">
           <table className="w-full">
             <thead><tr><th className="th">Order</th><th className="th">Name</th><th className="th">Code</th><th className="th">Aliases (for parsing)</th><th className="th">Default credits</th><th className="th"></th></tr></thead>
             <tbody>
@@ -67,15 +67,15 @@ export default function BasketsClient({ me }) {
                   <td className="td">{b.order}</td>
                   <td className="td font-medium">{b.name}</td>
                   <td className="td">{b.code || '—'}</td>
-                  <td className="td text-sm text-gray-500">{(b.aliases || []).join(', ') || '—'}</td>
+                  <td className="td text-sm text-ink/55">{(b.aliases || []).join(', ') || '—'}</td>
                   <td className="td">{b.defaultCredits || 0}</td>
                   <td className="td">
                     <button className="btn-ghost" onClick={() => openEdit(b)}>Edit</button>
-                    <button className="btn-ghost text-red-600" onClick={() => remove(b._id)}>Remove</button>
+                    <button className="btn-ghost text-brand-dark" onClick={() => remove(b._id)}>Remove</button>
                   </td>
                 </tr>
               ))}
-              {!baskets.length && <tr><td className="td text-gray-400" colSpan={6}>No baskets yet. Add your first basket to begin.</td></tr>}
+              {!baskets.length && <tr><td className="td text-ink/40" colSpan={6}>No baskets yet. Add your first basket to begin.</td></tr>}
             </tbody>
           </table>
         </div>

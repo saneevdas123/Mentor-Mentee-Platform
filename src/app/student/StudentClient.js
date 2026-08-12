@@ -4,6 +4,7 @@ import Shell from '@/components/Shell';
 import { Stat, Card, Modal, Field, Badge, statusTone, useToast } from '@/components/ui';
 import ProfileEditor from '@/components/ProfileEditor';
 import StudentAcademics from '@/components/StudentAcademics';
+import { fetchJson } from '@/lib/fetchJson';
 
 const NAV = [{ href: '/student', label: 'Dashboard' }];
 
@@ -17,23 +18,38 @@ export default function StudentClient({ me }) {
   const { show, node } = useToast();
 
   async function load() {
-    const [s, i, m] = await Promise.all([
-      fetch('/api/students').then((r) => r.json()),
-      fetch('/api/issues').then((r) => r.json()),
-      fetch('/api/meetings').then((r) => r.json()),
-    ]);
-    setProfile((s.students || [])[0] || null);
-    setIssues(i.issues || []);
-    setMeetings(m.meetings || []);
+    try {
+      const [s, i, m] = await Promise.all([
+        fetchJson('/api/students'),
+        fetchJson('/api/issues'),
+        fetchJson('/api/meetings'),
+      ]);
+      if (!s.ok) show(s.data?.error || 'Failed to load profile');
+      if (!i.ok) show(i.data?.error || 'Failed to load issues');
+      if (!m.ok) show(m.data?.error || 'Failed to load meetings');
+      setProfile((s.data?.students || [])[0] || null);
+      setIssues(i.data?.issues || []);
+      setMeetings(m.data?.meetings || []);
+    } catch (err) {
+      show(err.message || 'Failed to load dashboard');
+    }
   }
   useEffect(() => { load(); }, []);
 
   async function raiseIssue(e) {
     e.preventDefault();
     const fd = new FormData(e.target);
-    const res = await fetch('/api/issues', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ subject: fd.get('subject'), description: fd.get('description'), category: fd.get('category'), priority: fd.get('priority') }) });
-    const data = await res.json();
-    if (!res.ok) return show(data.error || 'Failed');
+    const { res, data } = await fetchJson('/api/issues', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        subject: fd.get('subject'),
+        description: fd.get('description'),
+        category: fd.get('category'),
+        priority: fd.get('priority'),
+      }),
+    });
+    if (!res.ok) return show(data?.error || 'Failed');
     setShowIssue(false); show('Issue submitted to your mentor'); load();
   }
 
@@ -41,8 +57,8 @@ export default function StudentClient({ me }) {
 
   return (
     <Shell role="STUDENT" name={me.name} nav={NAV}>
-      <h1 className="text-2xl font-bold mb-1">My Dashboard</h1>
-      <p className="text-gray-500 mb-6 text-sm">View your academic profile, placements, activities and raise issues to your mentor.</p>
+      <h1 className="text-2xl font-bold mb-1 tracking-tight text-ink">My Dashboard</h1>
+      <p className="text-ink/55 mb-6 text-sm">View your academic profile, placements, activities and raise issues to your mentor.</p>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Stat label="CGPA" value={profile?.latestCGPA ?? '—'} />
@@ -71,19 +87,19 @@ export default function StudentClient({ me }) {
           </div>
         </Card>
       )}
-      {tab === 'overview' && !profile && <Card title="Profile"><p className="text-gray-400 text-sm">Your profile has not been set up yet. Please contact your HoD.</p></Card>}
+      {tab === 'overview' && !profile && <Card title="Profile"><p className="text-ink/40 text-sm">Your profile has not been set up yet. Please contact your HoD.</p></Card>}
 
       {tab === 'academics' && (
         <Card title="Semester Results">
-          <table className="w-full text-sm">
+          <div className="table-wrap"><table className="w-full text-sm">
             <thead><tr><th className="th">Sem</th><th className="th">Year</th><th className="th">SGPA</th><th className="th">CGPA</th><th className="th">Backlogs</th><th className="th">Att%</th><th className="th">Status</th></tr></thead>
             <tbody>
               {(profile?.semesterResults || []).map((s, i) => (
                 <tr key={i}><td className="td">{s.semester}</td><td className="td">{s.academicYear}</td><td className="td">{s.sgpa}</td><td className="td">{s.cgpa}</td><td className="td">{s.backlogs}</td><td className="td">{s.attendancePercent}</td><td className="td"><Badge tone={s.resultStatus === 'PASS' ? 'green' : s.resultStatus === 'FAIL' ? 'red' : 'gray'}>{s.resultStatus}</Badge></td></tr>
               ))}
-              {!(profile?.semesterResults || []).length && <tr><td className="td text-gray-400" colSpan={7}>No results recorded yet.</td></tr>}
+              {!(profile?.semesterResults || []).length && <tr><td className="td text-ink/40" colSpan={7}>No results recorded yet.</td></tr>}
             </tbody>
-          </table>
+          </table></div>
         </Card>
       )}
 
@@ -93,25 +109,25 @@ export default function StudentClient({ me }) {
         <Card title="My Issues" actions={<button className="btn-primary" onClick={() => setShowIssue(true)}>+ Raise Issue</button>}>
           <div className="space-y-2">
             {issues.map((i) => (
-              <div key={i._id} className="border rounded-lg p-3">
+              <div key={i._id} className="border-2 border-ink rounded-xl p-3 bg-white shadow-hard-sm">
                 <div className="flex items-center justify-between">
-                  <div className="font-medium">{i.subject}</div>
+                  <div className="font-semibold">{i.subject}</div>
                   <Badge tone={statusTone(i.status)}>{i.status}</Badge>
                 </div>
-                <div className="text-sm text-gray-600 mt-1">{i.description}</div>
+                <div className="text-sm text-ink/65 mt-1">{i.description}</div>
                 {(i.responses || []).map((r, x) => (
-                  <div key={x} className="text-sm bg-brand-light rounded p-2 mt-2"><b>{r.byName}:</b> {r.message}</div>
+                  <div key={x} className="text-sm bg-accent-yellow border border-ink/20 rounded-xl p-2 mt-2"><b>{r.byName}:</b> {r.message}</div>
                 ))}
               </div>
             ))}
-            {!issues.length && <p className="text-gray-400 text-sm">You have not raised any issues.</p>}
+            {!issues.length && <p className="text-ink/40 text-sm">You have not raised any issues.</p>}
           </div>
         </Card>
       )}
 
       {tab === 'meetings' && (
         <Card title="Upcoming & Past Meetings">
-          <table className="w-full text-sm">
+          <div className="table-wrap"><table className="w-full text-sm">
             <thead><tr><th className="th">Title</th><th className="th">When</th><th className="th">Type</th><th className="th">Join</th></tr></thead>
             <tbody>
               {meetings.map((m) => (
@@ -122,9 +138,9 @@ export default function StudentClient({ me }) {
                   <td className="td">{m.meetLink ? <a className="text-brand underline" href={m.meetLink} target="_blank">Join</a> : '—'}</td>
                 </tr>
               ))}
-              {!meetings.length && <tr><td className="td text-gray-400" colSpan={4}>No meetings scheduled yet.</td></tr>}
+              {!meetings.length && <tr><td className="td text-ink/40" colSpan={4}>No meetings scheduled yet.</td></tr>}
             </tbody>
-          </table>
+          </table></div>
         </Card>
       )}
 
@@ -151,7 +167,7 @@ export default function StudentClient({ me }) {
 function Info({ label, value }) {
   return (
     <div>
-      <div className="text-xs text-gray-500">{label}</div>
+      <div className="text-xs text-ink/55">{label}</div>
       <div className="font-medium">{value || '—'}</div>
     </div>
   );

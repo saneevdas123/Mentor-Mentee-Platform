@@ -5,17 +5,17 @@ import ReportHeader, { Row, Signature } from '@/components/ReportHeader';
 export default function NirfReport() {
   const [r, setR] = useState(null);
   useEffect(() => { fetch('/api/reports/nirf').then((x) => x.json()).then((d) => setR(d.report)); }, []);
-  if (!r) return <div className="p-10 text-center text-gray-400">Loading report…</div>;
+  if (!r) return <div className="p-10 text-center text-ink/40">Loading report…</div>;
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white">
+    <div className="min-h-screen bg-cream"><div className="max-w-4xl mx-auto p-6 bg-white border-x-2 border-ink print:border-0">
       <ReportHeader
         title="NIRF — Graduation Outcomes (GO) Report"
         subtitle="Parameter 3: Graduation Outcomes  ·  GO = GPH + GUE + GMS"
         criterion="Combined Placement & Higher Studies (GPH) · University Examinations (GUE) · Median Salary (GMS)"
       />
 
-      <h3 className="font-semibold text-brand mb-2">A. Combined Metric — Placement & Higher Studies (GPH)</h3>
+      <h3 className="font-bold text-ink mb-2">A. Combined Metric — Placement & Higher Studies (GPH)</h3>
       <table className="w-full border-collapse mb-6">
         <tbody>
           <Row label="Total graduating students considered" value={r.totalStudents} />
@@ -26,7 +26,7 @@ export default function NirfReport() {
         </tbody>
       </table>
 
-      <h3 className="font-semibold text-brand mb-2">B. Median Salary (GMS)</h3>
+      <h3 className="font-bold text-ink mb-2">B. Median Salary (GMS)</h3>
       <table className="w-full border-collapse mb-6">
         <tbody>
           <Row label="Median salary of placed graduates (LPA)" value={`₹ ${r.medianSalaryLPA} LPA`} highlight />
@@ -35,7 +35,7 @@ export default function NirfReport() {
         </tbody>
       </table>
 
-      <h3 className="font-semibold text-brand mb-2">C. University Examinations (GUE)</h3>
+      <h3 className="font-bold text-ink mb-2">C. University Examinations (GUE)</h3>
       <table className="w-full border-collapse mb-6">
         <tbody>
           <Row label="Students graduating in stipulated time (%)" value={`${r.onTimeGraduationPercent}%`} highlight />
@@ -43,14 +43,15 @@ export default function NirfReport() {
         </tbody>
       </table>
 
-      <h3 className="font-semibold text-brand mb-2">D. Recruiters</h3>
-      <div className="border border-gray-300 p-3 text-sm mb-6">
-        {r.recruiters.length ? r.recruiters.join(', ') : <span className="text-gray-400">No recruiter data recorded.</span>}
+      <h3 className="font-bold text-ink mb-2">D. Recruiters</h3>
+      <div className="border-2 border-ink rounded-neo p-3 text-sm mb-6 bg-cream">
+        {r.recruiters.length ? r.recruiters.join(', ') : <span className="text-ink/40">No recruiter data recorded.</span>}
       </div>
 
-      <p className="text-xs text-gray-500 mb-6">Note: NIRF requires the median salary computed over placed graduates in the previous three years, with company-wise counts and max/min/median offered. Ensure placement records are verified before submission.</p>
+      <p className="text-xs text-ink/55 mb-6">Note: NIRF requires the median salary computed over placed graduates in the previous three years, with company-wise counts and max/min/median offered. Ensure placement records are verified before submission.</p>
 
       <Signature />
+    </div>
     </div>
   );
 }

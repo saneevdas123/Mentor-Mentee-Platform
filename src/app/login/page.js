@@ -1,6 +1,7 @@
 'use client';
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -45,30 +46,43 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen grid md:grid-cols-2">
-      <div className="hidden md:flex flex-col justify-between bg-brand text-white p-10">
+    <div className="min-h-screen grid md:grid-cols-2 bg-cream">
+      <div className="hidden md:flex flex-col justify-between bg-ink text-cream p-10 border-r-2 border-ink">
         <div>
-          <div className="text-sm text-white/70">Centurion University of Technology and Management</div>
-          <h1 className="text-3xl font-bold mt-3 leading-tight">Mentor–Mentee<br/>Platform</h1>
-          <p className="text-white/80 mt-4 max-w-sm text-sm">
-            A structured mentoring system with automated weekly meetings, monthly parent
+          <div className="text-sm font-semibold text-accent tracking-wide">Centurion University of Technology and Management</div>
+          <h1 className="text-4xl font-bold mt-4 leading-[1.1] tracking-tight">Mentor–Mentee<br />Platform</h1>
+          <p className="text-cream/70 mt-5 max-w-sm text-sm leading-relaxed">
+            Structured mentoring with automated weekly meetings, monthly parent
             interactions, and audit-ready reporting for NAAC, NIRF and NBA.
           </p>
         </div>
-        <ul className="text-sm text-white/80 space-y-2">
-          <li>• Admin → Dean → HoD → Mentor → Student hierarchy</li>
-          <li>• Auto-scheduled Google Meet sessions & minutes</li>
-          <li>• One-click accreditation reports</li>
+        <ul className="text-sm text-cream/80 space-y-3">
+          {[
+            'Admin → Dean → HoD → Mentor → Student hierarchy',
+            'Auto-scheduled Google Meet sessions & minutes',
+            'One-click accreditation reports',
+          ].map((item) => (
+            <li key={item} className="flex gap-2">
+              <span className="text-brand font-bold">•</span>
+              <span>{item}</span>
+            </li>
+          ))}
         </ul>
       </div>
 
-      <div className="flex items-center justify-center p-6 bg-[#f5f7f6]">
+      <div className="flex items-center justify-center p-6">
         <div className="w-full max-w-sm">
-          <div className="md:hidden text-brand font-bold text-xl mb-2">CUTM Mentoring</div>
-          <h2 className="text-xl font-semibold mb-1">{changeMode ? 'Set a new password' : 'Sign in'}</h2>
-          <p className="text-sm text-gray-500 mb-6">{changeMode ? 'This is your first login. Please choose a secure password.' : 'Use the credentials sent to your email.'}</p>
+          <Link href="/" className="md:hidden font-bold text-2xl mb-1 text-ink inline-block hover:text-brand">CUTM Mentoring</Link>
+          <h2 className="text-2xl font-bold mb-1 text-ink">{changeMode ? 'Set a new password' : 'Sign in'}</h2>
+          <p className="text-sm text-ink/60 mb-6">
+            {changeMode ? 'This is your first login. Please choose a secure password.' : 'Use the credentials sent to your email.'}
+          </p>
 
-          {err && <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{err}</div>}
+          {err && (
+            <div className="mb-4 text-sm text-ink bg-accent-pink border-2 border-ink rounded-xl px-3 py-2 shadow-hard-sm">
+              {err}
+            </div>
+          )}
 
           {!changeMode ? (
             <form onSubmit={onLogin} className="space-y-4">

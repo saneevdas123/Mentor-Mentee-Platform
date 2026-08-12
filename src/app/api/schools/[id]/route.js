@@ -2,7 +2,8 @@ import dbConnect from '@/lib/db';
 import School from '@/models/School';
 import { requireRole, json, error } from '@/lib/apiGuard';
 
-export async function PATCH(req, { params }) {
+export async function PATCH(req, context) {
+  const params = await context.params;
   const { error: e } = await requireRole('ADMIN');
   if (e) return e;
   await dbConnect();
@@ -12,7 +13,8 @@ export async function PATCH(req, { params }) {
   return json({ ok: true, school });
 }
 
-export async function DELETE(req, { params }) {
+export async function DELETE(req, context) {
+  const params = await context.params;
   const { error: e } = await requireRole('ADMIN');
   if (e) return e;
   await dbConnect();

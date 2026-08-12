@@ -2,6 +2,8 @@ import dbConnect from '@/lib/db';
 import StudentProfile from '@/models/StudentProfile';
 import LearnerCriteria from '@/models/LearnerCriteria';
 import Mapping from '@/models/Mapping';
+// Register models used by populate()
+import '@/models/Department';
 import { getSession } from '@/lib/auth';
 import { json, error } from '@/lib/apiGuard';
 import { classifyStudent, cohortPercentiles, defaultCriteria, suggestedActions, CATEGORY_LABELS } from '@/lib/learnerEngine';

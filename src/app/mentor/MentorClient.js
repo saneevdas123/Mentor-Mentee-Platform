@@ -4,13 +4,14 @@ import Shell from '@/components/Shell';
 import { Stat, Card, Modal, Field, Badge, riskTone, statusTone, useToast } from '@/components/ui';
 import ProfileEditor from '@/components/ProfileEditor';
 import MenteeWorkspace from '@/components/MenteeWorkspace';
+import { fetchJson } from '@/lib/fetchJson';
 
 const NAV = [{ href: '/mentor', label: 'Dashboard' }];
 
 const LEARNER_TONE = { ADVANCED: 'blue', AVERAGE: 'gray', SLOW: 'amber' };
 const LEARNER_SHORT = { ADVANCED: 'Advanced', AVERAGE: 'Average', SLOW: 'Slow' };
 function learnerBadge(cat) {
-  if (!cat || cat === 'UNSET') return <span className="text-gray-300 text-xs">—</span>;
+  if (!cat || cat === 'UNSET') return <span className="text-ink/30 text-xs">—</span>;
   return <Badge tone={LEARNER_TONE[cat] || 'gray'}>{LEARNER_SHORT[cat] || cat}</Badge>;
 }
 
@@ -30,20 +31,25 @@ export default function MentorClient({ me }) {
   const { show, node } = useToast();
 
   async function load() {
-    const [s, mt, mn, is, lr] = await Promise.all([
-      fetch('/api/students').then((r) => r.json()),
-      fetch('/api/meetings').then((r) => r.json()),
-      fetch('/api/minutes').then((r) => r.json()),
-      fetch('/api/issues').then((r) => r.json()),
-      fetch('/api/learner').then((r) => r.json()),
-    ]);
-    setStudents(s.students || []);
-    setMeetings(mt.meetings || []);
-    setMinutes(mn.minutes || []);
-    setIssues(is.issues || []);
-    const map = {};
-    (lr.learners || []).forEach((l) => { map[l._id] = l.category; });
-    setLearnerMap(map);
+    try {
+      const [s, mt, mn, is, lr] = await Promise.all([
+        fetchJson('/api/students'),
+        fetchJson('/api/meetings'),
+        fetchJson('/api/minutes'),
+        fetchJson('/api/issues'),
+        fetchJson('/api/learner'),
+      ]);
+      if (!s.ok) show(s.data?.error || 'Failed to load students');
+      setStudents(s.data?.students || []);
+      setMeetings(mt.data?.meetings || []);
+      setMinutes(mn.data?.minutes || []);
+      setIssues(is.data?.issues || []);
+      const map = {};
+      (lr.data?.learners || []).forEach((l) => { map[l._id] = l.category; });
+      setLearnerMap(map);
+    } catch (err) {
+      show(err.message || 'Failed to load dashboard');
+    }
   }
   useEffect(() => { load(); }, []);
 
@@ -83,8 +89,8 @@ export default function MentorClient({ me }) {
 
   return (
     <Shell role="MENTOR" name={me.name} nav={NAV}>
-      <h1 className="text-2xl font-bold mb-1">Mentor Dashboard</h1>
-      <p className="text-gray-500 mb-6 text-sm">Update mentee profiles, schedule meetings and record minutes.</p>
+      <h1 className="text-2xl font-bold mb-1 tracking-tight text-ink">Mentor Dashboard</h1>
+      <p className="text-ink/55 mb-6 text-sm">Update mentee profiles, schedule meetings and record minutes.</p>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Stat label="My Mentees" value={students.length} />
@@ -101,7 +107,7 @@ export default function MentorClient({ me }) {
 
       {tab === 'mentees' && (
         <Card title="My Mentees" actions={<span className="flex gap-2"><a className="btn-ghost" href="/api/reports/learners?format=xlsx">Learner report (Excel)</a><a className="btn-ghost" href="/api/reports/interactions">Interaction report (Excel)</a></span>}>
-          <div className="overflow-x-auto">
+          <div className="table-wrap">
             <table className="w-full">
               <thead><tr><th className="th">Reg. No</th><th className="th">Name</th><th className="th">Programme</th><th className="th">CGPA</th><th className="th">Backlogs</th><th className="th">Learner</th><th className="th">Risk</th><th className="th"></th></tr></thead>
               <tbody>
@@ -120,7 +126,7 @@ export default function MentorClient({ me }) {
                     </td>
                   </tr>
                 ))}
-                {!students.length && <tr><td className="td text-gray-400" colSpan={7}>No mentees assigned yet.</td></tr>}
+                {!students.length && <tr><td className="td text-ink/40" colSpan={8}>No mentees assigned yet.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -129,7 +135,7 @@ export default function MentorClient({ me }) {
 
       {tab === 'meetings' && (
         <Card title="Meetings" actions={<button className="btn-primary" onClick={() => setShowMeet(true)}>+ Schedule Meeting</button>}>
-          <div className="overflow-x-auto">
+          <div className="table-wrap">
             <table className="w-full">
               <thead><tr><th className="th">Title</th><th className="th">Type</th><th className="th">When</th><th className="th">Status</th><th className="th">Meet</th></tr></thead>
               <tbody>
@@ -142,7 +148,7 @@ export default function MentorClient({ me }) {
                     <td className="td">{m.meetLink ? <a className="text-brand underline" href={m.meetLink} target="_blank">Join</a> : '—'}</td>
                   </tr>
                 ))}
-                {!meetings.length && <tr><td className="td text-gray-400" colSpan={5}>No meetings. The system also auto-schedules these weekly/monthly.</td></tr>}
+                {!meetings.length && <tr><td className="td text-ink/40" colSpan={5}>No meetings. The system also auto-schedules these weekly/monthly.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -151,7 +157,7 @@ export default function MentorClient({ me }) {
 
       {tab === 'minutes' && (
         <Card title="Minutes of Meetings">
-          <div className="overflow-x-auto">
+          <div className="table-wrap">
             <table className="w-full">
               <thead><tr><th className="th">Title</th><th className="th">Held on</th><th className="th">Type</th><th className="th">Finalized</th><th className="th"></th></tr></thead>
               <tbody>
@@ -164,7 +170,7 @@ export default function MentorClient({ me }) {
                     <td className="td"><button className="btn-ghost" onClick={() => setViewMin(m)}>Open</button></td>
                   </tr>
                 ))}
-                {!minutes.length && <tr><td className="td text-gray-400" colSpan={5}>Minutes are auto-generated when meetings are created.</td></tr>}
+                {!minutes.length && <tr><td className="td text-ink/40" colSpan={5}>Minutes are auto-generated when meetings are created.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -173,7 +179,7 @@ export default function MentorClient({ me }) {
 
       {tab === 'issues' && (
         <Card title="Mentee Issues">
-          <div className="overflow-x-auto">
+          <div className="table-wrap">
             <table className="w-full">
               <thead><tr><th className="th">Student</th><th className="th">Subject</th><th className="th">Category</th><th className="th">Priority</th><th className="th">Status</th><th className="th"></th></tr></thead>
               <tbody>
@@ -187,7 +193,7 @@ export default function MentorClient({ me }) {
                     <td className="td"><button className="btn-ghost" onClick={() => setRespondIssue(i)}>Respond</button></td>
                   </tr>
                 ))}
-                {!issues.length && <tr><td className="td text-gray-400" colSpan={6}>No issues raised.</td></tr>}
+                {!issues.length && <tr><td className="td text-ink/40" colSpan={6}>No issues raised.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -217,7 +223,7 @@ export default function MentorClient({ me }) {
           </Field>
           <Field label="Date & time"><input className="input" type="datetime-local" required onChange={(e) => setMeetForm({ ...meetForm, scheduledAt: e.target.value })} /></Field>
           <Field label="Agenda"><textarea className="input" rows={2} onChange={(e) => setMeetForm({ ...meetForm, agenda: e.target.value })} /></Field>
-          <p className="text-xs text-gray-500">A Google Meet link is generated and invitations are emailed automatically. A minutes draft is created.</p>
+          <p className="text-xs text-ink/55">A Google Meet link is generated and invitations are emailed automatically. A minutes draft is created.</p>
           <button className="btn-primary w-full">Schedule & notify</button>
         </form>
       </Modal>
@@ -231,13 +237,13 @@ export default function MentorClient({ me }) {
       <Modal open={!!respondIssue} onClose={() => setRespondIssue(null)} title="Respond to Issue">
         {respondIssue && (
           <div>
-            <div className="bg-gray-50 rounded p-3 mb-3 text-sm">
+            <div className="bg-cream rounded p-3 mb-3 text-sm">
               <div className="font-medium">{respondIssue.subject}</div>
-              <div className="text-gray-600 mt-1">{respondIssue.description}</div>
+              <div className="text-ink/65 mt-1">{respondIssue.description}</div>
             </div>
             <div className="max-h-40 overflow-y-auto mb-3 space-y-2">
               {(respondIssue.responses || []).map((r, i) => (
-                <div key={i} className="text-sm bg-brand-light rounded p-2"><b>{r.byName} ({r.byRole})</b>: {r.message}</div>
+                <div key={i} className="text-sm bg-accent-yellow border border-ink/20 rounded-xl p-2"><b>{r.byName} ({r.byRole})</b>: {r.message}</div>
               ))}
             </div>
             <form onSubmit={respond} className="space-y-3">
@@ -263,18 +269,18 @@ function MinutesEditor({ m, onSave }) {
   return (
     <div className="space-y-3">
       <div className="grid grid-cols-2 gap-3 text-sm">
-        <div><span className="text-gray-500">Title:</span> <b>{f.title}</b></div>
-        <div><span className="text-gray-500">Held on:</span> <b>{f.heldOn ? new Date(f.heldOn).toLocaleString() : '—'}</b></div>
+        <div><span className="text-ink/55">Title:</span> <b>{f.title}</b></div>
+        <div><span className="text-ink/55">Held on:</span> <b>{f.heldOn ? new Date(f.heldOn).toLocaleString() : '—'}</b></div>
       </div>
       <Field label="Attendance">
-        <div className="border rounded max-h-40 overflow-y-auto divide-y">
+        <div className="border rounded max-h-40 overflow-y-auto divide-y divide-ink/10">
           {f.attendees.map((a, i) => (
             <label key={i} className="flex items-center gap-2 px-3 py-1.5 text-sm">
               <input type="checkbox" checked={!!a.present} onChange={(e) => { const arr = [...f.attendees]; arr[i] = { ...a, present: e.target.checked }; set('attendees', arr); }} />
-              <span>{a.name}</span><span className="text-gray-400">{a.role}</span>
+              <span>{a.name}</span><span className="text-ink/40">{a.role}</span>
             </label>
           ))}
-          {!f.attendees.length && <div className="px-3 py-2 text-gray-400 text-sm">No attendees recorded.</div>}
+          {!f.attendees.length && <div className="px-3 py-2 text-ink/40 text-sm">No attendees recorded.</div>}
         </div>
       </Field>
       <Field label="Agenda"><textarea className="input" rows={2} value={f.agenda || ''} onChange={(e) => set('agenda', e.target.value)} /></Field>

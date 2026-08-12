@@ -4,7 +4,8 @@ import { getSession } from '@/lib/auth';
 import { json, error } from '@/lib/apiGuard';
 import { canAccessStudent } from '@/lib/access';
 
-export async function PATCH(req, { params }) {
+export async function PATCH(req, context) {
+  const params = await context.params;
   const session = await getSession();
   if (!session) return error('Unauthorized', 401);
   await dbConnect();
@@ -30,7 +31,8 @@ export async function PATCH(req, { params }) {
   return json({ ok: true, record: rec });
 }
 
-export async function DELETE(req, { params }) {
+export async function DELETE(req, context) {
+  const params = await context.params;
   const session = await getSession();
   if (!session) return error('Unauthorized', 401);
   if (session.role === 'STUDENT') return error('Forbidden', 403);

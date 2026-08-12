@@ -40,7 +40,7 @@ export async function sendMail({ to, subject, html, text }) {
 
 const shell = (title, inner) => `
 <div style="font-family:Segoe UI,Arial,sans-serif;max-width:640px;margin:auto;border:1px solid #e5e7eb;border-radius:10px;overflow:hidden">
-  <div style="background:#0b5d3b;color:#fff;padding:18px 24px">
+  <div style="background:#FF4B3E;color:#fff;padding:18px 24px">
     <h2 style="margin:0;font-size:18px">Centurion University of Technology and Management</h2>
     <p style="margin:4px 0 0;font-size:13px;opacity:.85">Mentor–Mentee Programme · ${title}</p>
   </div>
@@ -58,10 +58,10 @@ export function weeklyMeetingEmail({ recipientName, meeting }) {
     <table style="width:100%;border-collapse:collapse;margin:12px 0">
       <tr><td style="padding:6px 0;color:#6b7280">Date &amp; Time</td><td><b>${when}</b></td></tr>
       <tr><td style="padding:6px 0;color:#6b7280">Agenda</td><td>${meeting.agenda || 'Academic progress, difficulties and guidance'}</td></tr>
-      <tr><td style="padding:6px 0;color:#6b7280">Join link</td><td><a href="${meeting.meetLink}" style="color:#0b5d3b">${meeting.meetLink}</a></td></tr>
+      <tr><td style="padding:6px 0;color:#6b7280">Join link</td><td><a href="${meeting.meetLink}" style="color:#FF4B3E">${meeting.meetLink}</a></td></tr>
     </table>
     <p>
-      <a href="${meeting.meetLink}" style="display:inline-block;background:#0b5d3b;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px">Join Google Meet</a>
+      <a href="${meeting.meetLink}" style="display:inline-block;background:#FF4B3E;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px">Join Google Meet</a>
     </p>
     <p>Kindly be present on time. Regards,<br/>Mentoring Cell, CUTM</p>`;
   return { subject: `Weekly Mentoring Meeting · ${when}`, html: shell('Weekly Meeting', inner) };
@@ -75,9 +75,9 @@ export function parentMeetingEmail({ recipientName, meeting }) {
     <table style="width:100%;border-collapse:collapse;margin:12px 0">
       <tr><td style="padding:6px 0;color:#6b7280">Date &amp; Time</td><td><b>${when}</b></td></tr>
       <tr><td style="padding:6px 0;color:#6b7280">Agenda</td><td>${meeting.agenda || 'Academic performance, attendance, placements and mentoring feedback'}</td></tr>
-      <tr><td style="padding:6px 0;color:#6b7280">Join link</td><td><a href="${meeting.meetLink}" style="color:#0b5d3b">${meeting.meetLink}</a></td></tr>
+      <tr><td style="padding:6px 0;color:#6b7280">Join link</td><td><a href="${meeting.meetLink}" style="color:#FF4B3E">${meeting.meetLink}</a></td></tr>
     </table>
-    <p><a href="${meeting.meetLink}" style="display:inline-block;background:#0b5d3b;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px">Join Google Meet</a></p>
+    <p><a href="${meeting.meetLink}" style="display:inline-block;background:#FF4B3E;color:#fff;text-decoration:none;padding:10px 18px;border-radius:8px">Join Google Meet</a></p>
     <p>Your participation is valuable to us. Regards,<br/>Mentoring Cell, CUTM</p>`;
   return { subject: `Monthly Parent Meeting · ${when}`, html: shell('Parent Meeting', inner) };
 }

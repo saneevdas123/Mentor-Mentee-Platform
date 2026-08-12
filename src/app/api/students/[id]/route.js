@@ -1,6 +1,9 @@
 import dbConnect from '@/lib/db';
 import StudentProfile from '@/models/StudentProfile';
 import Mapping from '@/models/Mapping';
+// Register models used by populate()
+import '@/models/Department';
+import '@/models/School';
 import { getSession } from '@/lib/auth';
 import { json, error } from '@/lib/apiGuard';
 
@@ -13,7 +16,8 @@ async function canEdit(session, studentId) {
   return false;
 }
 
-export async function GET(req, { params }) {
+export async function GET(req, context) {
+  const params = await context.params;
   const session = await getSession();
   if (!session) return error('Unauthorized', 401);
   await dbConnect();
@@ -23,7 +27,8 @@ export async function GET(req, { params }) {
   return json({ student });
 }
 
-export async function PATCH(req, { params }) {
+export async function PATCH(req, context) {
+  const params = await context.params;
   const session = await getSession();
   if (!session) return error('Unauthorized', 401);
   await dbConnect();

@@ -54,19 +54,19 @@ export default function MenteeWorkspace({ student, onClose }) {
       {/* header line */}
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <div className="text-lg font-bold text-gray-900">{student.name}</div>
-          <div className="text-xs text-gray-500">{student.registrationNo} · {student.programme || '—'} · Sem {student.currentSemester || '—'}</div>
+          <div className="text-lg font-bold text-ink">{student.name}</div>
+          <div className="text-xs text-ink/55">{student.registrationNo} · {student.programme || '—'} · Sem {student.currentSemester || '—'}</div>
         </div>
         <a className="btn-ghost no-print" href={`/api/reports/interactions?studentId=${student._id}`}>Download interaction report (Excel)</a>
       </div>
 
-      <div className="flex flex-wrap gap-2 border-b pb-2">
+      <div className="flex flex-wrap gap-2 border-b-2 border-ink/15 pb-2">
         {[['credit', 'Credit Tracker'], ['gradesheets', `Gradesheets (${gradesheets.length})`], ['counsel', `Counselling (${counsel.length})`], ['branch', `Branch Change${branch.length ? ` (${branch.length})` : ''}`]].map(([k, l]) => (
           <button key={k} className={tab === k ? 'btn-primary' : 'btn-ghost'} onClick={() => setTab(k)}>{l}</button>
         ))}
       </div>
 
-      {!data && <div className="text-gray-400 text-sm py-6">Loading…</div>}
+      {!data && <div className="text-ink/40 text-sm py-6">Loading…</div>}
 
       {data && tab === 'credit' && (
         <div className="space-y-4">
@@ -99,10 +99,10 @@ export default function MenteeWorkspace({ student, onClose }) {
 /* ---------- Gradesheets ---------- */
 function GradesheetList({ gradesheets, onReview }) {
   if (!gradesheets.length) {
-    return <div className="text-sm text-gray-500 bg-gray-50 rounded-lg p-4">No gradesheets uploaded yet. Use “Ask student for gradesheet” on the Credit Tracker tab.</div>;
+    return <div className="text-sm text-ink/55 bg-accent-yellow border-2 border-ink rounded-neo p-4 shadow-hard-sm">No gradesheets uploaded yet. Use “Ask student for gradesheet” on the Credit Tracker tab.</div>;
   }
   return (
-    <table className="w-full text-sm">
+    <div className="table-wrap"><table className="w-full text-sm">
       <thead><tr><th className="th">Title</th><th className="th">Sem</th><th className="th">Credits earned</th><th className="th">Courses</th><th className="th">Status</th><th className="th"></th></tr></thead>
       <tbody>
         {gradesheets.map((g) => (
@@ -116,7 +116,7 @@ function GradesheetList({ gradesheets, onReview }) {
           </tr>
         ))}
       </tbody>
-    </table>
+    </table></div>
   );
 }
 
@@ -126,19 +126,19 @@ function GradesheetReview({ gs, baskets, onClose, onVerify }) {
   const remaps = lines.map((l) => ({ lineId: l._id, basket: l.basket || null }));
   const unmapped = lines.filter((l) => !l.basket).length;
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4 no-print" onClick={onClose}>
-      <div className="bg-white rounded-xl max-w-3xl w-full max-h-[85vh] overflow-y-auto p-5" onClick={(e) => e.stopPropagation()}>
+    <div className="fixed inset-0 z-50 bg-ink/50 flex items-center justify-center p-4 no-print" onClick={onClose}>
+      <div className="bg-cream border-2 border-ink shadow-hard-lg rounded-neo max-w-3xl w-full max-h-[85vh] overflow-y-auto p-5" onClick={(e) => e.stopPropagation()}>
         <div className="flex items-center justify-between mb-2">
-          <div className="font-bold text-gray-900">Review — {gs.title}</div>
-          <a className="text-brand underline text-sm" href={`/api/gradesheets/${gs._id}/file`} target="_blank" rel="noreferrer">Open original PDF</a>
+          <div className="font-bold text-ink">Review — {gs.title}</div>
+          <a className="text-brand font-semibold underline text-sm" href={`/api/gradesheets/${gs._id}/file`} target="_blank" rel="noreferrer">Open original PDF</a>
         </div>
-        {gs.parseWarning && <div className="bg-amber-50 border border-amber-200 text-amber-800 text-xs rounded p-2 mb-2">{gs.parseWarning}</div>}
-        <p className="text-xs text-gray-500 mb-3">Confirm each course’s basket. Auto-detected mappings are pre-filled; fix any marked “Select…”. Your corrections are remembered for future uploads. Only passing grades earn credit.</p>
+        {gs.parseWarning && <div className="bg-accent-yellow border-2 border-ink text-ink text-xs rounded-xl p-2 mb-2 shadow-hard-sm">{gs.parseWarning}</div>}
+        <p className="text-xs text-ink/55 mb-3">Confirm each course’s basket. Auto-detected mappings are pre-filled; fix any marked “Select…”. Your corrections are remembered for future uploads. Only passing grades earn credit.</p>
         <table className="w-full text-sm">
           <thead><tr><th className="th">Course</th><th className="th">Title</th><th className="th">Cr</th><th className="th">Grade</th><th className="th">Basket</th></tr></thead>
           <tbody>
             {lines.map((l, i) => (
-              <tr key={i} className={!l.basket ? 'bg-amber-50' : ''}>
+              <tr key={i} className={!l.basket ? 'bg-accent-yellow' : ''}>
                 <td className="td font-mono text-xs">{l.courseCode}</td>
                 <td className="td">{l.courseTitle}</td>
                 <td className="td">{l.credit}</td>
@@ -151,11 +151,11 @@ function GradesheetReview({ gs, baskets, onClose, onVerify }) {
                 </td>
               </tr>
             ))}
-            {!lines.length && <tr><td className="td text-gray-400" colSpan={5}>No course rows were parsed from this PDF.</td></tr>}
+            {!lines.length && <tr><td className="td text-ink/40" colSpan={5}>No course rows were parsed from this PDF.</td></tr>}
           </tbody>
         </table>
         <div className="flex items-center justify-between mt-4 pt-3 border-t">
-          <div className="text-xs text-gray-500">{unmapped ? `${unmapped} course(s) still need a basket` : 'All courses mapped'}</div>
+          <div className="text-xs text-ink/55">{unmapped ? `${unmapped} course(s) still need a basket` : 'All courses mapped'}</div>
           <div className="flex gap-2">
             <button className="btn-ghost" onClick={onClose}>Cancel</button>
             <button className="btn-primary" onClick={() => onVerify(gs, remaps)} disabled={!!unmapped}>Verify & apply credits</button>
@@ -190,9 +190,9 @@ function CounsellingPanel({ studentId, baskets, records, recommendations, onSave
   return (
     <div className="grid md:grid-cols-2 gap-4">
       {/* New note */}
-      <form onSubmit={save} className="space-y-3 border border-gray-200 rounded-xl p-4">
+      <form onSubmit={save} className="space-y-3 border-2 border-ink rounded-neo p-4 bg-white shadow-hard-sm">
         <div className="flex items-center justify-between">
-          <div className="font-semibold text-gray-800 text-sm">Record a counselling session</div>
+          <div className="font-semibold text-ink text-sm">Record a counselling session</div>
           <button type="button" className="text-xs text-brand underline" onClick={prefillFromTracker}>Pre-fill from tracker</button>
         </div>
         <div className="grid grid-cols-2 gap-2">
@@ -217,7 +217,7 @@ function CounsellingPanel({ studentId, baskets, records, recommendations, onSave
                 </select>
                 <input className="input col-span-2 py-1" placeholder="cr" value={r.credits} onChange={(e) => set('recommendations', form.recommendations.map((x, y) => y === i ? { ...x, credits: e.target.value } : x))} />
                 <input className="input col-span-5 py-1" placeholder="Suggested course code(s)" value={r.suggestedCourses} onChange={(e) => set('recommendations', form.recommendations.map((x, y) => y === i ? { ...x, suggestedCourses: e.target.value } : x))} />
-                <button type="button" className="col-span-1 text-gray-400 hover:text-red-600" onClick={() => set('recommendations', form.recommendations.filter((_, y) => y !== i))}>×</button>
+                <button type="button" className="col-span-1 text-ink/40 hover:text-brand-dark" onClick={() => set('recommendations', form.recommendations.filter((_, y) => y !== i))}>×</button>
               </div>
             ))}
           </div>
@@ -227,25 +227,25 @@ function CounsellingPanel({ studentId, baskets, records, recommendations, onSave
 
       {/* History */}
       <div className="space-y-2">
-        <div className="font-semibold text-gray-800 text-sm">History</div>
+        <div className="font-semibold text-ink text-sm">History</div>
         <div className="space-y-2 max-h-[26rem] overflow-y-auto pr-1">
           {records.map((r) => (
-            <div key={r._id} className="border border-gray-200 rounded-lg p-3">
+            <div key={r._id} className="border-2 border-ink rounded-xl p-3 bg-white shadow-hard-sm">
               <div className="flex items-center justify-between">
-                <span className="font-medium text-sm">{r.subject || kindLabel(r.kind)}</span>
+                <span className="font-semibold text-sm">{r.subject || kindLabel(r.kind)}</span>
                 <Badge tone={r.kind === 'BRANCH_CHANGE' ? 'blue' : r.kind === 'CREDIT_COUNSELLING' ? 'green' : 'gray'}>{kindLabel(r.kind)}</Badge>
               </div>
-              <div className="text-xs text-gray-400">{new Date(r.occurredOn).toLocaleDateString()} · {r.mode?.replace('_', ' ')} {r.studentAcknowledged && '· acknowledged'}</div>
-              {r.summary && <div className="text-sm text-gray-700 mt-1">{r.summary}</div>}
-              {r.advice && <div className="text-sm text-gray-600 mt-1"><b>Advice:</b> {r.advice}</div>}
+              <div className="text-xs text-ink/40">{new Date(r.occurredOn).toLocaleDateString()} · {r.mode?.replace('_', ' ')} {r.studentAcknowledged && '· acknowledged'}</div>
+              {r.summary && <div className="text-sm text-ink/80 mt-1">{r.summary}</div>}
+              {r.advice && <div className="text-sm text-ink/65 mt-1"><b>Advice:</b> {r.advice}</div>}
               {(r.recommendations || []).length > 0 && (
-                <ul className="text-xs text-gray-600 mt-1 list-disc pl-4">
+                <ul className="text-xs text-ink/65 mt-1 list-disc pl-4">
                   {r.recommendations.map((x, i) => <li key={i}>{x.basketName || 'Basket'}: {x.credits || '?'} cr {x.suggestedCourses ? `— ${x.suggestedCourses}` : ''}</li>)}
                 </ul>
               )}
             </div>
           ))}
-          {!records.length && <div className="text-gray-400 text-sm">No counselling records yet.</div>}
+          {!records.length && <div className="text-ink/40 text-sm">No counselling records yet.</div>}
         </div>
       </div>
     </div>
@@ -270,19 +270,19 @@ function BranchPanel({ student, firstYear, requests, onSaved, show }) {
   return (
     <div className="space-y-3">
       {!firstYear && (
-        <div className="bg-gray-50 border border-gray-200 text-gray-600 text-sm rounded-lg p-3">
+        <div className="bg-accent-peach border-2 border-ink text-ink/80 text-sm rounded-neo p-3 shadow-hard-sm">
           Branch change is only applicable to first-year students (semester 1–2). This mentee is in semester {student.currentSemester || '—'}.
         </div>
       )}
       {requests.map((r) => (
-        <div key={r._id} className="border border-gray-200 rounded-xl p-4">
+        <div key={r._id} className="border-2 border-ink rounded-neo p-4 bg-white shadow-hard-sm">
           <div className="flex items-center justify-between">
             <div className="font-medium">{r.currentProgramme || '—'} → <span className="text-brand">{r.requestedProgramme}</span></div>
             <Badge tone={statusTone(r.status)}>{r.status.replace('_', ' ')}</Badge>
           </div>
-          {r.reason && <div className="text-sm text-gray-600 mt-1"><b>Student’s reason:</b> {r.reason}</div>}
-          <div className="text-xs text-gray-400 mt-1">Raised {new Date(r.createdAt).toLocaleDateString()} · CGPA at request: {r.currentCGPA ?? '—'}</div>
-          {r.mentorRemarks && <div className="text-sm mt-2 bg-brand-light rounded p-2"><b>Your counselling:</b> {r.mentorRemarks} — {r.mentorRecommends ? 'Recommended' : 'Not recommended'}</div>}
+          {r.reason && <div className="text-sm text-ink/65 mt-1"><b>Student’s reason:</b> {r.reason}</div>}
+          <div className="text-xs text-ink/40 mt-1">Raised {new Date(r.createdAt).toLocaleDateString()} · CGPA at request: {r.currentCGPA ?? '—'}</div>
+          {r.mentorRemarks && <div className="text-sm mt-2 bg-accent-yellow rounded p-2"><b>Your counselling:</b> {r.mentorRemarks} — {r.mentorRecommends ? 'Recommended' : 'Not recommended'}</div>}
 
           {['REQUESTED'].includes(r.status) && (
             counselId === r._id ? (
@@ -298,11 +298,11 @@ function BranchPanel({ student, firstYear, requests, onSaved, show }) {
               <button className="btn-ghost mt-3" onClick={() => { setCounselId(r._id); setRemarks(''); }}>Counsel this request</button>
             )
           )}
-          {['RECOMMENDED', 'NOT_RECOMMENDED'].includes(r.status) && <div className="text-xs text-gray-500 mt-2">Awaiting HoD/Dean decision.</div>}
+          {['RECOMMENDED', 'NOT_RECOMMENDED'].includes(r.status) && <div className="text-xs text-ink/55 mt-2">Awaiting HoD/Dean decision.</div>}
           {['APPROVED', 'REJECTED'].includes(r.status) && r.decisionRemarks && <div className="text-sm mt-2"><b>Decision:</b> {r.decisionRemarks}</div>}
         </div>
       ))}
-      {!requests.length && <div className="text-gray-400 text-sm">No branch-change requests from this mentee.</div>}
+      {!requests.length && <div className="text-ink/40 text-sm">No branch-change requests from this mentee.</div>}
     </div>
   );
 }
@@ -312,7 +312,7 @@ function LearningLevel({ student, learner, onSaved, show }) {
   const [editing, setEditing] = useState(false);
   const [cat, setCat] = useState(learner?.category || 'AVERAGE');
   const [reason, setReason] = useState('');
-  const tones = { ADVANCED: 'bg-blue-50 border-blue-200', AVERAGE: 'bg-gray-50 border-gray-200', SLOW: 'bg-amber-50 border-amber-200' };
+  const tones = { ADVANCED: 'bg-accent-peach', AVERAGE: 'bg-cream', SLOW: 'bg-accent-yellow' };
   const labels = { ADVANCED: 'Advanced learner', AVERAGE: 'Average learner', SLOW: 'Slow learner' };
   const badgeTone = { ADVANCED: 'blue', AVERAGE: 'gray', SLOW: 'amber' };
 
@@ -333,26 +333,26 @@ function LearningLevel({ student, learner, onSaved, show }) {
 
   if (!learner) return null;
   return (
-    <div className={`border rounded-xl p-4 ${tones[learner.category] || tones.AVERAGE}`}>
+    <div className={`border-2 border-ink rounded-neo p-4 shadow-hard-sm ${tones[learner.category] || tones.AVERAGE}`}>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="font-semibold text-gray-800">Learning level:</span>
+          <span className="font-bold text-ink">Learning level:</span>
           <Badge tone={badgeTone[learner.category]}>{labels[learner.category]}</Badge>
-          {learner.overridden && <span className="text-xs text-gray-500">(set by mentor)</span>}
-          {learner.usedDefaults && <span className="text-xs text-amber-600">· using default criteria — ask HoD to set the policy</span>}
+          {learner.overridden && <span className="text-xs text-ink/55">(set by mentor)</span>}
+          {learner.usedDefaults && <span className="text-xs text-brand-dark font-medium">· using default criteria — ask HoD to set the policy</span>}
         </div>
         {!editing && <button className="btn-ghost py-1" onClick={() => { setEditing(true); setCat(learner.category); }}>Override</button>}
       </div>
       {learner.basis?.length > 0 && (
-        <div className="text-xs text-gray-600 mt-2">Why: {learner.basis.join(' · ')}</div>
+        <div className="text-xs text-ink/65 mt-2">Why: {learner.basis.join(' · ')}</div>
       )}
       {learner.actions?.length > 0 && (
-        <div className="text-sm text-gray-700 mt-2">
+        <div className="text-sm text-ink/80 mt-2">
           <span className="font-medium">Suggested support: </span>{learner.actions.join(', ')}
         </div>
       )}
       {editing && (
-        <div className="mt-3 space-y-2 bg-white/70 rounded-lg p-3">
+        <div className="mt-3 space-y-2 bg-white border-2 border-ink rounded-xl p-3 shadow-hard-sm">
           <div className="flex gap-2">
             {['ADVANCED', 'AVERAGE', 'SLOW'].map((k) => (
               <button key={k} className={cat === k ? 'btn-primary py-1' : 'btn-ghost py-1'} onClick={() => setCat(k)}>{labels[k]}</button>

@@ -46,8 +46,9 @@ export async function verifyToken(token) {
 }
 
 // Server-component / route-handler helpers.
-export function setSessionCookie(token) {
-  cookies().set(COOKIE_NAME, token, {
+export async function setSessionCookie(token) {
+  const jar = await cookies();
+  jar.set(COOKIE_NAME, token, {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
@@ -56,12 +57,14 @@ export function setSessionCookie(token) {
   });
 }
 
-export function clearSessionCookie() {
-  cookies().set(COOKIE_NAME, '', { httpOnly: true, path: '/', maxAge: 0 });
+export async function clearSessionCookie() {
+  const jar = await cookies();
+  jar.set(COOKIE_NAME, '', { httpOnly: true, path: '/', maxAge: 0 });
 }
 
 export async function getSession() {
-  const token = cookies().get(COOKIE_NAME)?.value;
+  const jar = await cookies();
+  const token = jar.get(COOKIE_NAME)?.value;
   if (!token) return null;
   return verifyToken(token);
 }

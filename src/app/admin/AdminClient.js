@@ -51,8 +51,8 @@ export default function AdminClient({ me }) {
 
   return (
     <Shell role="ADMIN" name={me.name} nav={NAV}>
-      <h1 className="text-2xl font-bold mb-1">System Overview</h1>
-      <p className="text-gray-500 mb-6 text-sm">Manage schools and provision Deans. All lower levels are managed by their respective heads.</p>
+      <h1 className="text-2xl font-bold mb-1 tracking-tight text-ink">System Overview</h1>
+      <p className="text-ink/55 mb-6 text-sm">Manage schools and provision Deans. All lower levels are managed by their respective heads.</p>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Stat label="Schools" value={schools.length} />
@@ -68,7 +68,7 @@ export default function AdminClient({ me }) {
 
       {tab === 'schools' && (
         <Card title="Schools" actions={<button className="btn-primary" onClick={() => setShowSchool(true)}>+ Add School</button>}>
-          <div className="overflow-x-auto">
+          <div className="table-wrap">
             <table className="w-full">
               <thead><tr><th className="th">Name</th><th className="th">Code</th><th className="th">Campus</th><th className="th">Dean</th><th className="th">Depts</th><th className="th">Students</th></tr></thead>
               <tbody>
@@ -82,7 +82,7 @@ export default function AdminClient({ me }) {
                     <td className="td">{s.studentCount}</td>
                   </tr>
                 ))}
-                {!schools.length && <tr><td className="td text-gray-400" colSpan={6}>No schools yet.</td></tr>}
+                {!schools.length && <tr><td className="td text-ink/40" colSpan={6}>No schools yet.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -91,7 +91,7 @@ export default function AdminClient({ me }) {
 
       {tab === 'deans' && (
         <Card title="Deans" actions={<button className="btn-primary" onClick={() => setShowDean(true)}>+ Provision Dean</button>}>
-          <div className="overflow-x-auto">
+          <div className="table-wrap">
             <table className="w-full">
               <thead><tr><th className="th">Name</th><th className="th">Email</th><th className="th">School</th><th className="th">Last login</th></tr></thead>
               <tbody>
@@ -103,7 +103,7 @@ export default function AdminClient({ me }) {
                     <td className="td">{d.lastLoginAt ? new Date(d.lastLoginAt).toLocaleDateString() : <Badge tone="amber">Never</Badge>}</td>
                   </tr>
                 ))}
-                {!deans.length && <tr><td className="td text-gray-400" colSpan={4}>No deans yet.</td></tr>}
+                {!deans.length && <tr><td className="td text-ink/40" colSpan={4}>No deans yet.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -123,10 +123,10 @@ export default function AdminClient({ me }) {
       <Modal open={showDean} onClose={() => { setShowDean(false); setCreds(null); }} title="Provision Dean">
         {creds ? (
           <div className="space-y-3">
-            <p className="text-sm text-gray-600">Account created. Credentials have also been emailed.</p>
-            <div className="bg-brand-light rounded-lg p-3 text-sm">
-              <div><span className="text-gray-500">Email:</span> <b>{creds.email}</b></div>
-              <div><span className="text-gray-500">Temp password:</span> <b>{creds.pass}</b></div>
+            <p className="text-sm text-ink/65">Account created. Credentials have also been emailed.</p>
+            <div className="bg-accent-yellow border-2 border-ink rounded-xl p-3 shadow-hard-sm text-sm">
+              <div><span className="text-ink/55">Email:</span> <b>{creds.email}</b></div>
+              <div><span className="text-ink/55">Temp password:</span> <b>{creds.pass}</b></div>
             </div>
             <button className="btn-primary w-full" onClick={() => { setShowDean(false); setCreds(null); }}>Done</button>
           </div>

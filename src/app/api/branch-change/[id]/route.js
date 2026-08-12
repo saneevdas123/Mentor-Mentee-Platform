@@ -5,7 +5,8 @@ import { getSession } from '@/lib/auth';
 import { json, error } from '@/lib/apiGuard';
 import { canAccessStudent } from '@/lib/access';
 
-export async function PATCH(req, { params }) {
+export async function PATCH(req, context) {
+  const params = await context.params;
   const session = await getSession();
   if (!session) return error('Unauthorized', 401);
   await dbConnect();

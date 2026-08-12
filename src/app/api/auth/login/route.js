@@ -19,7 +19,7 @@ export async function POST(req) {
   await user.save();
 
   const token = await createToken(user);
-  setSessionCookie(token);
+  await setSessionCookie(token);
 
   return json({
     ok: true,

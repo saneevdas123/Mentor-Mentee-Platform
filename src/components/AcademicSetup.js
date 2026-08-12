@@ -38,10 +38,10 @@ export function BasketManager({ show }) {
   }
 
   return (
-    <Card title="CBCS Baskets" actions={<span className="text-xs text-gray-500">Define the credit buckets used across your department</span>}>
+    <Card title="CBCS Baskets" actions={<span className="text-xs text-ink/55">Define the credit buckets used across your department</span>}>
       <div className="grid md:grid-cols-2 gap-5">
-        <form onSubmit={save} className="space-y-3 border border-gray-200 rounded-xl p-4">
-          <div className="font-semibold text-sm text-gray-800">{editingId ? 'Edit basket' : 'Add a basket'}</div>
+        <form onSubmit={save} className="space-y-3 border-2 border-ink rounded-neo p-4 bg-white shadow-hard-sm">
+          <div className="font-bold text-sm text-ink">{editingId ? 'Edit basket' : 'Add a basket'}</div>
           <div className="grid grid-cols-2 gap-2">
             <Field label="Name *"><input className="input" placeholder="Program Core" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required /></Field>
             <Field label="Code"><input className="input" placeholder="PC" value={form.code} onChange={(e) => setForm({ ...form, code: e.target.value })} /></Field>
@@ -49,7 +49,7 @@ export function BasketManager({ show }) {
             <Field label="Display order"><input className="input" type="number" value={form.order} onChange={(e) => setForm({ ...form, order: e.target.value })} /></Field>
           </div>
           <Field label="Aliases (comma-separated)"><input className="input" placeholder="Core, Discipline Core" value={form.aliases} onChange={(e) => setForm({ ...form, aliases: e.target.value })} /></Field>
-          <p className="text-xs text-gray-500">Aliases help the gradesheet reader recognise this basket when the PDF prints a different label.</p>
+          <p className="text-xs text-ink/55">Aliases help the gradesheet reader recognise this basket when the PDF prints a different label.</p>
           <div className="flex gap-2">
             <button className="btn-primary flex-1">{editingId ? 'Save changes' : 'Add basket'}</button>
             {editingId && <button type="button" className="btn-ghost" onClick={() => { setEditingId(null); setForm(blank()); }}>Cancel</button>}
@@ -57,21 +57,21 @@ export function BasketManager({ show }) {
         </form>
 
         <div>
-          <div className="font-semibold text-sm text-gray-800 mb-2">Baskets ({baskets.length})</div>
+          <div className="font-semibold text-sm text-ink mb-2">Baskets ({baskets.length})</div>
           <div className="space-y-2 max-h-[24rem] overflow-y-auto pr-1">
             {baskets.map((b) => (
-              <div key={b._id} className="flex items-center justify-between border border-gray-200 rounded-lg px-3 py-2">
+              <div key={b._id} className="flex items-center justify-between border-2 border-ink rounded-xl px-3 py-2 bg-cream shadow-hard-sm">
                 <div>
-                  <div className="text-sm font-medium">{b.name} {b.code && <span className="text-gray-400">({b.code})</span>}</div>
-                  <div className="text-xs text-gray-400">Default {b.defaultCredits || 0} cr{b.aliases?.length ? ` · aliases: ${b.aliases.join(', ')}` : ''}</div>
+                  <div className="text-sm font-medium">{b.name} {b.code && <span className="text-ink/40">({b.code})</span>}</div>
+                  <div className="text-xs text-ink/40">Default {b.defaultCredits || 0} cr{b.aliases?.length ? ` · aliases: ${b.aliases.join(', ')}` : ''}</div>
                 </div>
                 <div className="flex gap-1">
                   <button className="btn-ghost py-1" onClick={() => edit(b)}>Edit</button>
-                  <button className="text-gray-400 hover:text-red-600 px-2" onClick={() => remove(b._id)}>×</button>
+                  <button className="text-ink/40 hover:text-brand-dark px-2" onClick={() => remove(b._id)}>×</button>
                 </div>
               </div>
             ))}
-            {!baskets.length && <div className="text-gray-400 text-sm">No baskets yet. Add your first basket to enable credit tracking.</div>}
+            {!baskets.length && <div className="text-ink/40 text-sm">No baskets yet. Add your first basket to enable credit tracking.</div>}
           </div>
         </div>
       </div>
@@ -119,12 +119,12 @@ export function CreditPlanEditor({ student, onClose, show }) {
     show('Credit plan saved'); onClose();
   }
 
-  if (!loaded) return <div className="text-gray-400 text-sm py-6">Loading…</div>;
+  if (!loaded) return <div className="text-ink/40 text-sm py-6">Loading…</div>;
 
   return (
     <div className="space-y-3">
-      <div className="text-sm text-gray-500">Set how many credits <b>{student.name}</b> must earn in each basket. Seeded from basket defaults — adjust as needed.</div>
-      {!baskets.length && <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm rounded p-3">No baskets exist yet. Add baskets first (Baskets tab).</div>}
+      <div className="text-sm text-ink/55">Set how many credits <b>{student.name}</b> must earn in each basket. Seeded from basket defaults — adjust as needed.</div>
+      {!baskets.length && <div className="bg-accent-yellow border-2 border-ink text-ink text-sm rounded-neo p-3 shadow-hard-sm">No baskets exist yet. Add baskets first (Baskets tab).</div>}
       <div className="space-y-2 max-h-80 overflow-y-auto pr-1">
         {lines.map((l, i) => (
           <div key={i} className="grid grid-cols-12 items-center gap-2">
@@ -174,18 +174,18 @@ export function BranchDecisions({ show }) {
   const done = requests.filter((r) => ['APPROVED', 'REJECTED', 'WITHDRAWN'].includes(r.status));
 
   return (
-    <Card title="Branch-Change Requests" actions={<span className="text-xs text-gray-500">First-year students · decide after mentor counselling</span>}>
+    <Card title="Branch-Change Requests" actions={<span className="text-xs text-ink/55">First-year students · decide after mentor counselling</span>}>
       <div className="space-y-4">
         <Section title={`Ready for decision (${pending.length})`}>
           {pending.map((r) => (
-            <div key={r._id} className="border border-gray-200 rounded-xl p-4">
+            <div key={r._id} className="border-2 border-ink rounded-neo p-4 bg-white shadow-hard-sm">
               <div className="flex items-center justify-between">
-                <div className="font-medium">{r.student?.name} <span className="text-gray-400 text-sm">{r.student?.registrationNo}</span></div>
+                <div className="font-medium">{r.student?.name} <span className="text-ink/40 text-sm">{r.student?.registrationNo}</span></div>
                 <Badge tone={r.status === 'RECOMMENDED' ? 'green' : 'red'}>{r.status.replace('_', ' ')}</Badge>
               </div>
               <div className="text-sm mt-1">{r.currentProgramme || '—'} → <b className="text-brand">{r.requestedProgramme}</b> · CGPA {r.currentCGPA ?? '—'}</div>
-              {r.reason && <div className="text-sm text-gray-600 mt-1"><b>Reason:</b> {r.reason}</div>}
-              <div className="text-sm mt-2 bg-brand-light rounded p-2"><b>Mentor ({r.mentor?.name || '—'}):</b> {r.mentorRemarks || '—'} — {r.mentorRecommends ? 'Recommended' : 'Not recommended'}</div>
+              {r.reason && <div className="text-sm text-ink/65 mt-1"><b>Reason:</b> {r.reason}</div>}
+              <div className="text-sm mt-2 bg-accent-yellow border border-ink/20 rounded-xl p-2"><b>Mentor ({r.mentor?.name || '—'}):</b> {r.mentorRemarks || '—'} — {r.mentorRecommends ? 'Recommended' : 'Not recommended'}</div>
               <textarea className="input mt-2" rows={2} placeholder="Decision remarks" value={remarks[r._id] || ''} onChange={(e) => setRemarks({ ...remarks, [r._id]: e.target.value })} />
               <div className="flex gap-2 mt-2">
                 <button className="btn-primary" onClick={() => decide(r._id, 'APPROVED')}>Approve</button>
@@ -193,7 +193,7 @@ export function BranchDecisions({ show }) {
               </div>
             </div>
           ))}
-          {!pending.length && <div className="text-gray-400 text-sm">Nothing awaiting your decision.</div>}
+          {!pending.length && <div className="text-ink/40 text-sm">Nothing awaiting your decision.</div>}
         </Section>
 
         {awaiting.length > 0 && (
@@ -222,7 +222,7 @@ export function BranchDecisions({ show }) {
 function Section({ title, children }) {
   return (
     <div>
-      <div className="text-xs font-semibold uppercase tracking-wide text-gray-500 mb-2">{title}</div>
+      <div className="text-xs font-semibold uppercase tracking-wide text-ink/55 mb-2">{title}</div>
       <div className="space-y-2">{children}</div>
     </div>
   );
@@ -248,7 +248,7 @@ export function LearnerCriteriaEditor({ show }) {
     setSaved(true); show('Learner policy saved');
   }
 
-  if (!c) return <Card title="Learner Classification Policy"><div className="text-gray-400 text-sm">Loading…</div></Card>;
+  if (!c) return <Card title="Learner Classification Policy"><div className="text-ink/40 text-sm">Loading…</div></Card>;
 
   const num = (k, label, step = '0.1') => (
     <div><label className="label">{label}</label><input className="input" type="number" step={step} value={c[k] ?? ''} onChange={(e) => set(k, Number(e.target.value))} /></div>
@@ -258,11 +258,11 @@ export function LearnerCriteriaEditor({ show }) {
   );
 
   return (
-    <Card title="Learner Classification Policy" actions={<span className="text-xs text-gray-500">NAAC 2.2.1 — slow & advanced learners</span>}>
-      <p className="text-sm text-gray-600 mb-4">These criteria decide how the system flags each student as a <b>slow</b>, <b>average</b> or <b>advanced</b> learner. They are your documented methodology for accreditation — keep them realistic and, ideally, ratified by your Academic Council.</p>
+    <Card title="Learner Classification Policy" actions={<span className="text-xs text-ink/55">NAAC 2.2.1 — slow & advanced learners</span>}>
+      <p className="text-sm text-ink/65 mb-4">These criteria decide how the system flags each student as a <b>slow</b>, <b>average</b> or <b>advanced</b> learner. They are your documented methodology for accreditation — keep them realistic and, ideally, ratified by your Academic Council.</p>
       <div className="grid md:grid-cols-2 gap-5">
-        <div className="space-y-3 border border-gray-200 rounded-xl p-4">
-          <div className="font-semibold text-sm text-gray-800">Thresholds</div>
+        <div className="space-y-3 border-2 border-ink rounded-neo p-4 bg-white shadow-hard-sm">
+          <div className="font-semibold text-sm text-ink">Thresholds</div>
           <div><label className="label">Mode</label>
             <select className="input" value={c.mode} onChange={(e) => set('mode', e.target.value)}>
               <option value="ABSOLUTE">Absolute cut-offs only</option>
@@ -280,8 +280,8 @@ export function LearnerCriteriaEditor({ show }) {
           </div>
         </div>
         <div className="space-y-3">
-          <div className="border border-gray-200 rounded-xl p-4 space-y-1">
-            <div className="font-semibold text-sm text-gray-800 mb-1">Signals to consider</div>
+          <div className="border-2 border-ink rounded-neo p-4 space-y-1 bg-accent-mint shadow-hard-sm">
+            <div className="font-semibold text-sm text-ink mb-1">Signals to consider</div>
             {chk('considerBacklogs', 'Any live backlog marks a student as slow')}
             {chk('considerAttendance', 'Low attendance marks a student as slow')}
             {chk('considerAttainment', 'Low CO/PO attainment marks a student as slow (NBA)')}
@@ -293,7 +293,7 @@ export function LearnerCriteriaEditor({ show }) {
       <div className="flex items-center gap-3 mt-4">
         <button className="btn-primary" onClick={save}>Save policy</button>
         <a className="btn-ghost" href="/api/reports/learners?format=xlsx">Download learner report (Excel)</a>
-        {saved && <span className="text-green-600 text-sm">✓ Saved</span>}
+        {saved && <span className="text-ink text-sm">✓ Saved</span>}
       </div>
     </Card>
   );

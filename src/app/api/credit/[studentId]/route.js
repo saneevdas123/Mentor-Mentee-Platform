@@ -10,7 +10,8 @@ import { computeProgress } from '@/lib/creditEngine';
 import LearnerCriteria from '@/models/LearnerCriteria';
 import { classifyStudent, cohortPercentiles, defaultCriteria, suggestedActions } from '@/lib/learnerEngine';
 
-export async function GET(req, { params }) {
+export async function GET(req, context) {
+  const params = await context.params;
   const session = await getSession();
   if (!session) return error('Unauthorized', 401);
   await dbConnect();

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import Shell from '@/components/Shell';
 import { Stat, Card, Modal, Field, Badge, riskTone, useToast } from '@/components/ui';
 import { BasketManager, CreditPlanEditor, BranchDecisions, LearnerCriteriaEditor } from '@/components/AcademicSetup';
+import { fetchJson } from '@/lib/fetchJson';
 
 const NAV = [
   { href: '/hod', label: 'Overview' },
@@ -31,14 +32,19 @@ export default function HodClient({ me }) {
   const { show, node } = useToast();
 
   async function load() {
-    const [m, s, mp] = await Promise.all([
-      fetch('/api/users?role=MENTOR').then((r) => r.json()),
-      fetch('/api/students').then((r) => r.json()),
-      fetch('/api/mapping').then((r) => r.json()),
-    ]);
-    setMentors(m.users || []);
-    setStudents(s.students || []);
-    setMappings(mp.mappings || []);
+    try {
+      const [m, s, mp] = await Promise.all([
+        fetchJson('/api/users?role=MENTOR'),
+        fetchJson('/api/students'),
+        fetchJson('/api/mapping'),
+      ]);
+      if (!s.ok) show(s.data?.error || 'Failed to load students');
+      setMentors(m.data?.users || []);
+      setStudents(s.data?.students || []);
+      setMappings(mp.data?.mappings || []);
+    } catch (err) {
+      show(err.message || 'Failed to load dashboard');
+    }
   }
   useEffect(() => { load(); }, []);
 
@@ -85,8 +91,8 @@ export default function HodClient({ me }) {
 
   return (
     <Shell role="HOD" name={me.name} nav={NAV}>
-      <h1 className="text-2xl font-bold mb-1">Department Dashboard</h1>
-      <p className="text-gray-500 mb-6 text-sm">Provision faculty mentors, onboard students, and map mentees.</p>
+      <h1 className="text-2xl font-bold mb-1 tracking-tight text-ink">Department Dashboard</h1>
+      <p className="text-ink/55 mb-6 text-sm">Provision faculty mentors, onboard students, and map mentees.</p>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <Stat label="Faculty Mentors" value={mentors.length} />
@@ -106,7 +112,7 @@ export default function HodClient({ me }) {
 
       {tab === 'mentors' && (
         <Card title="Faculty Mentors" actions={<button className="btn-primary" onClick={() => setShowMentor(true)}>+ Add Mentor</button>}>
-          <div className="overflow-x-auto">
+          <div className="table-wrap">
             <table className="w-full">
               <thead><tr><th className="th">Name</th><th className="th">Email</th><th className="th">Employee ID</th><th className="th">Mentees</th><th className="th">Last login</th></tr></thead>
               <tbody>
@@ -122,7 +128,7 @@ export default function HodClient({ me }) {
                     </tr>
                   );
                 })}
-                {!mentors.length && <tr><td className="td text-gray-400" colSpan={5}>No mentors yet.</td></tr>}
+                {!mentors.length && <tr><td className="td text-ink/40" colSpan={5}>No mentors yet.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -138,7 +144,7 @@ export default function HodClient({ me }) {
             <button className="btn-primary" onClick={() => setShowStudent(true)}>+ Add Student</button>
           </div>
         }>
-          <div className="overflow-x-auto">
+          <div className="table-wrap">
             <table className="w-full">
               <thead><tr><th className="th">Reg. No</th><th className="th">Name</th><th className="th">Programme</th><th className="th">Sem</th><th className="th">CGPA</th><th className="th">Risk</th><th className="th">Mentor</th><th className="th">Credit Plan</th></tr></thead>
               <tbody>
@@ -157,7 +163,7 @@ export default function HodClient({ me }) {
                     </tr>
                   );
                 })}
-                {!students.length && <tr><td className="td text-gray-400" colSpan={8}>No students yet. Use Import Excel to bulk-add.</td></tr>}
+                {!students.length && <tr><td className="td text-ink/40" colSpan={8}>No students yet. Use Import Excel to bulk-add.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -166,7 +172,7 @@ export default function HodClient({ me }) {
 
       {tab === 'mapping' && (
         <Card title="Mentor–Mentee Mapping" actions={<button className="btn-primary" onClick={() => setShowMap(true)}>+ Map Students</button>}>
-          <div className="overflow-x-auto">
+          <div className="table-wrap">
             <table className="w-full">
               <thead><tr><th className="th">Mentor</th><th className="th">Student</th><th className="th">Reg. No</th><th className="th">CGPA</th><th className="th">Risk</th></tr></thead>
               <tbody>
@@ -179,7 +185,7 @@ export default function HodClient({ me }) {
                     <td className="td"><Badge tone={riskTone(m.student?.riskLevel)}>{m.student?.riskLevel}</Badge></td>
                   </tr>
                 ))}
-                {!mappings.length && <tr><td className="td text-gray-400" colSpan={5}>No mappings yet.</td></tr>}
+                {!mappings.length && <tr><td className="td text-ink/40" colSpan={5}>No mappings yet.</td></tr>}
               </tbody>
             </table>
           </div>
@@ -201,10 +207,10 @@ export default function HodClient({ me }) {
       <Modal open={showMentor} onClose={() => { setShowMentor(false); setCreds(null); }} title="Add Faculty Mentor">
         {creds ? (
           <div className="space-y-3">
-            <p className="text-sm text-gray-600">Account created and credentials emailed.</p>
-            <div className="bg-brand-light rounded-lg p-3 text-sm">
-              <div><span className="text-gray-500">Email:</span> <b>{creds.email}</b></div>
-              <div><span className="text-gray-500">Temp password:</span> <b>{creds.pass}</b></div>
+            <p className="text-sm text-ink/65">Account created and credentials emailed.</p>
+            <div className="bg-accent-yellow border-2 border-ink rounded-xl p-3 text-sm shadow-hard-sm">
+              <div><span className="text-ink/55">Email:</span> <b>{creds.email}</b></div>
+              <div><span className="text-ink/55">Temp password:</span> <b>{creds.pass}</b></div>
             </div>
             <button className="btn-primary w-full" onClick={() => { setShowMentor(false); setCreds(null); }}>Done</button>
           </div>
@@ -240,7 +246,7 @@ export default function HodClient({ me }) {
       <Modal open={showImport} onClose={() => setShowImport(false)} title="Import Students from Excel">
         {!importResult ? (
           <form onSubmit={doImport} className="space-y-3">
-            <p className="text-sm text-gray-600">Download the template, fill it, then upload here. Students are matched to mentors by <b>MentorEmail</b>.</p>
+            <p className="text-sm text-ink/65">Download the template, fill it, then upload here. Students are matched to mentors by <b>MentorEmail</b>.</p>
             <a className="btn-ghost" href="/api/students/template">Download Template</a>
             <Field label="Excel file (.xlsx)"><input className="input" type="file" accept=".xlsx" onChange={(e) => setFile(e.target.files[0])} /></Field>
             <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={issueCreds} onChange={(e) => setIssueCreds(e.target.checked)} /> Issue login credentials to students (emails them)</label>
@@ -249,15 +255,15 @@ export default function HodClient({ me }) {
         ) : (
           <div className="space-y-3 text-sm">
             <div className="grid grid-cols-2 gap-2">
-              <div className="bg-green-50 rounded p-2">Created: <b>{importResult.created}</b></div>
-              <div className="bg-blue-50 rounded p-2">Updated: <b>{importResult.updated}</b></div>
-              <div className="bg-brand-light rounded p-2">Mapped: <b>{importResult.mapped}</b></div>
-              <div className="bg-amber-50 rounded p-2">Credentials: <b>{importResult.credentialsIssued}</b></div>
+              <div className="bg-accent-mint border-2 border-ink rounded-xl p-2 shadow-hard-sm">Created: <b>{importResult.created}</b></div>
+              <div className="bg-accent-peach border-2 border-ink rounded-xl p-2 shadow-hard-sm">Updated: <b>{importResult.updated}</b></div>
+              <div className="bg-accent-yellow border-2 border-ink rounded-xl p-2 shadow-hard-sm">Mapped: <b>{importResult.mapped}</b></div>
+              <div className="bg-accent-pink border-2 border-ink rounded-xl p-2 shadow-hard-sm">Credentials: <b>{importResult.credentialsIssued}</b></div>
             </div>
             {importResult.errors?.length > 0 && (
-              <div className="bg-red-50 border border-red-200 rounded p-2 max-h-40 overflow-y-auto">
-                <div className="font-medium text-red-700 mb-1">{importResult.errors.length} issue(s):</div>
-                {importResult.errors.map((e, i) => <div key={i} className="text-red-600">Row {e.row}: {e.error}</div>)}
+              <div className="bg-accent-pink border-2 border-ink rounded-xl p-2 max-h-40 overflow-y-auto shadow-hard-sm">
+                <div className="font-bold text-ink mb-1">{importResult.errors.length} issue(s):</div>
+                {importResult.errors.map((e, i) => <div key={i} className="text-brand-dark">Row {e.row}: {e.error}</div>)}
               </div>
             )}
             <button className="btn-primary w-full" onClick={() => { setShowImport(false); setImportResult(null); }}>Done</button>
@@ -276,20 +282,20 @@ export default function HodClient({ me }) {
           </Field>
           <div>
             <label className="label">Select students ({mapStudents.length} selected)</label>
-            <div className="border border-gray-200 rounded-lg max-h-64 overflow-y-auto divide-y">
+            <div className="border-2 border-ink rounded-xl max-h-64 overflow-y-auto divide-y divide-ink/10 bg-white shadow-hard-sm">
               {students.map((s) => {
                 const checked = mapStudents.includes(s._id);
                 const map = mappings.find((x) => x.student?._id === s._id);
                 return (
-                  <label key={s._id} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50">
+                  <label key={s._id} className="flex items-center gap-2 px-3 py-2 text-sm hover:bg-cream">
                     <input type="checkbox" checked={checked} onChange={(e) => setMapStudents(e.target.checked ? [...mapStudents, s._id] : mapStudents.filter((x) => x !== s._id))} />
                     <span className="font-medium">{s.name}</span>
-                    <span className="text-gray-400">{s.registrationNo}</span>
+                    <span className="text-ink/40">{s.registrationNo}</span>
                     {map && <Badge tone="blue">→ {map.mentor?.name}</Badge>}
                   </label>
                 );
               })}
-              {!students.length && <div className="px-3 py-2 text-gray-400 text-sm">No students.</div>}
+              {!students.length && <div className="px-3 py-2 text-ink/40 text-sm">No students.</div>}
             </div>
           </div>
           <button className="btn-primary w-full">Map selected students</button>

@@ -6,7 +6,8 @@ import { canAccessStudent } from '@/lib/access';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(req, { params }) {
+export async function GET(req, context) {
+  const params = await context.params;
   const session = await getSession();
   if (!session) return error('Unauthorized', 401);
   await dbConnect();

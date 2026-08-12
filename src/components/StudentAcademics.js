@@ -70,7 +70,7 @@ export default function StudentAcademics({ student, show }) {
     show('Request withdrawn'); load();
   }
 
-  if (!student) return <Card title="Credits"><p className="text-gray-400 text-sm">Your profile has not been set up yet.</p></Card>;
+  if (!student) return <Card title="Credits"><p className="text-ink/40 text-sm">Your profile has not been set up yet.</p></Card>;
 
   const hasOpenBranch = branch.some((b) => ['REQUESTED', 'COUNSELLED', 'RECOMMENDED', 'NOT_RECOMMENDED'].includes(b.status));
 
@@ -78,7 +78,7 @@ export default function StudentAcademics({ student, show }) {
     <div className="space-y-4">
       {/* pending request banner */}
       {requests.length > 0 && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-800 rounded-lg p-3 text-sm">
+        <div className="bg-accent-yellow border-2 border-ink text-ink rounded-neo p-3 text-sm shadow-hard-sm font-medium">
           Your mentor has asked you to upload your latest gradesheet. Please upload the PDF below.
         </div>
       )}
@@ -98,63 +98,65 @@ export default function StudentAcademics({ student, show }) {
           <Field label="Semester"><input className="input" type="number" value={upload.semester} onChange={(e) => setUpload({ ...upload, semester: e.target.value })} /></Field>
           <button className="btn-primary" disabled={busy}>{busy ? 'Uploading…' : 'Upload & parse'}</button>
         </form>
-        <p className="text-xs text-gray-500 mb-3">Upload a text-based PDF (not a scanned image). The system reads your courses, credits and grades, and maps them to CBCS baskets. Your mentor verifies the mapping.</p>
-        <table className="w-full text-sm">
-          <thead><tr><th className="th">Title</th><th className="th">Sem</th><th className="th">Credits earned</th><th className="th">Status</th><th className="th"></th></tr></thead>
-          <tbody>
-            {gradesheets.map((g) => (
-              <tr key={g._id}>
-                <td className="td font-medium">{g.title}</td>
-                <td className="td">{g.semester ?? '—'}</td>
-                <td className="td">{g.creditsEarnedTotal ?? 0}</td>
-                <td className="td"><Badge tone={g.status === 'VERIFIED' ? 'green' : g.status === 'NEEDS_REVIEW' ? 'amber' : 'blue'}>{g.status.replace('_', ' ')}</Badge></td>
-                <td className="td"><a className="text-brand underline" href={`/api/gradesheets/${g._id}/file`} target="_blank" rel="noreferrer">PDF</a></td>
-              </tr>
-            ))}
-            {!gradesheets.length && <tr><td className="td text-gray-400" colSpan={5}>No gradesheets uploaded yet.</td></tr>}
-          </tbody>
-        </table>
+        <p className="text-xs text-ink/55 mb-3">Upload a text-based PDF (not a scanned image). The system reads your courses, credits and grades, and maps them to CBCS baskets. Your mentor verifies the mapping.</p>
+        <div className="table-wrap">
+          <table className="w-full text-sm">
+            <thead><tr><th className="th">Title</th><th className="th">Sem</th><th className="th">Credits earned</th><th className="th">Status</th><th className="th"></th></tr></thead>
+            <tbody>
+              {gradesheets.map((g) => (
+                <tr key={g._id}>
+                  <td className="td font-medium">{g.title}</td>
+                  <td className="td">{g.semester ?? '—'}</td>
+                  <td className="td">{g.creditsEarnedTotal ?? 0}</td>
+                  <td className="td"><Badge tone={g.status === 'VERIFIED' ? 'green' : g.status === 'NEEDS_REVIEW' ? 'amber' : 'blue'}>{g.status.replace('_', ' ')}</Badge></td>
+                  <td className="td"><a className="text-brand font-semibold underline" href={`/api/gradesheets/${g._id}/file`} target="_blank" rel="noreferrer">PDF</a></td>
+                </tr>
+              ))}
+              {!gradesheets.length && <tr><td className="td text-ink/40" colSpan={5}>No gradesheets uploaded yet.</td></tr>}
+            </tbody>
+          </table>
+        </div>
       </Card>
 
       {/* Counselling notes */}
       <Card title="Counselling from my Mentor">
         <div className="space-y-2">
           {counsel.map((r) => (
-            <div key={r._id} className="border border-gray-200 rounded-lg p-3">
+            <div key={r._id} className="border-2 border-ink rounded-xl p-3 bg-white shadow-hard-sm">
               <div className="flex items-center justify-between">
-                <span className="font-medium text-sm">{r.subject || r.kind.replace(/_/g, ' ')}</span>
+                <span className="font-semibold text-sm">{r.subject || r.kind.replace(/_/g, ' ')}</span>
                 <Badge tone={r.kind === 'CREDIT_COUNSELLING' ? 'green' : r.kind === 'BRANCH_CHANGE' ? 'blue' : 'gray'}>{r.kind.replace(/_/g, ' ')}</Badge>
               </div>
-              <div className="text-xs text-gray-400">{new Date(r.occurredOn).toLocaleDateString()}</div>
-              {r.summary && <div className="text-sm text-gray-700 mt-1">{r.summary}</div>}
-              {r.advice && <div className="text-sm text-gray-600 mt-1"><b>Advice:</b> {r.advice}</div>}
+              <div className="text-xs text-ink/40">{new Date(r.occurredOn).toLocaleDateString()}</div>
+              {r.summary && <div className="text-sm text-ink/80 mt-1">{r.summary}</div>}
+              {r.advice && <div className="text-sm text-ink/65 mt-1"><b>Advice:</b> {r.advice}</div>}
               {(r.recommendations || []).length > 0 && (
-                <ul className="text-xs text-gray-600 mt-1 list-disc pl-4">
+                <ul className="text-xs text-ink/65 mt-1 list-disc pl-4">
                   {r.recommendations.map((x, i) => <li key={i}>{x.basketName || 'Basket'}: {x.credits || '?'} cr {x.suggestedCourses ? `— ${x.suggestedCourses}` : ''}</li>)}
                 </ul>
               )}
               {!r.studentAcknowledged
                 ? <button className="btn-ghost mt-2 py-1" onClick={() => acknowledge(r._id)}>Acknowledge</button>
-                : <div className="text-xs text-green-600 mt-1">✓ Acknowledged</div>}
+                : <div className="text-xs text-ink mt-1">✓ Acknowledged</div>}
             </div>
           ))}
-          {!counsel.length && <p className="text-gray-400 text-sm">No counselling records yet.</p>}
+          {!counsel.length && <p className="text-ink/40 text-sm">No counselling records yet.</p>}
         </div>
       </Card>
 
       {/* Branch change (first year only) */}
       <Card title="Branch Change" actions={firstYear && !hasOpenBranch ? <button className="btn-primary" onClick={() => setShowBranch(true)}>Request branch change</button> : null}>
-        {!firstYear && <p className="text-gray-500 text-sm">Branch change is available only to first-year students (semester 1–2).</p>}
-        {firstYear && !branch.length && <p className="text-gray-400 text-sm">No branch-change request placed. If you wish to change your branch, raise a request — your mentor will counsel you first.</p>}
+        {!firstYear && <p className="text-ink/55 text-sm">Branch change is available only to first-year students (semester 1–2).</p>}
+        {firstYear && !branch.length && <p className="text-ink/40 text-sm">No branch-change request placed. If you wish to change your branch, raise a request — your mentor will counsel you first.</p>}
         <div className="space-y-2">
           {branch.map((b) => (
-            <div key={b._id} className="border border-gray-200 rounded-lg p-3">
+            <div key={b._id} className="border-2 border-ink rounded-xl p-3 bg-white shadow-hard-sm">
               <div className="flex items-center justify-between">
-                <div className="font-medium text-sm">{b.currentProgramme || '—'} → <span className="text-brand">{b.requestedProgramme}</span></div>
+                <div className="font-semibold text-sm">{b.currentProgramme || '—'} → <span className="text-brand">{b.requestedProgramme}</span></div>
                 <Badge tone={statusTone(b.status)}>{b.status.replace('_', ' ')}</Badge>
               </div>
-              {b.reason && <div className="text-sm text-gray-600 mt-1">{b.reason}</div>}
-              {b.mentorRemarks && <div className="text-sm mt-2 bg-brand-light rounded p-2"><b>Mentor:</b> {b.mentorRemarks} — {b.mentorRecommends ? 'Recommended' : 'Not recommended'}</div>}
+              {b.reason && <div className="text-sm text-ink/65 mt-1">{b.reason}</div>}
+              {b.mentorRemarks && <div className="text-sm mt-2 bg-accent-yellow border border-ink/20 rounded-xl p-2"><b>Mentor:</b> {b.mentorRemarks} — {b.mentorRecommends ? 'Recommended' : 'Not recommended'}</div>}
               {b.decisionRemarks && <div className="text-sm mt-1"><b>Decision:</b> {b.decisionRemarks}</div>}
               {['REQUESTED'].includes(b.status) && <button className="btn-ghost mt-2 py-1" onClick={() => withdrawBranch(b._id)}>Withdraw</button>}
             </div>
@@ -163,13 +165,13 @@ export default function StudentAcademics({ student, show }) {
       </Card>
 
       {showBranch && (
-        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4" onClick={() => setShowBranch(false)}>
-          <div className="bg-white rounded-xl max-w-md w-full p-5" onClick={(e) => e.stopPropagation()}>
-            <div className="font-bold mb-3">Request Branch Change</div>
+        <div className="fixed inset-0 z-50 bg-ink/50 flex items-center justify-center p-4" onClick={() => setShowBranch(false)}>
+          <div className="bg-cream border-2 border-ink shadow-hard-lg rounded-neo max-w-md w-full p-5" onClick={(e) => e.stopPropagation()}>
+            <div className="font-bold mb-3 text-ink">Request Branch Change</div>
             <form onSubmit={submitBranch} className="space-y-3">
               <Field label="Requested programme / branch"><input className="input" required value={branchForm.requestedProgramme} onChange={(e) => setBranchForm({ ...branchForm, requestedProgramme: e.target.value })} /></Field>
               <Field label="Reason"><textarea className="input" rows={3} value={branchForm.reason} onChange={(e) => setBranchForm({ ...branchForm, reason: e.target.value })} /></Field>
-              <p className="text-xs text-gray-500">Your mentor will counsel you before the HoD/Dean takes a decision.</p>
+              <p className="text-xs text-ink/55">Your mentor will counsel you before the HoD/Dean takes a decision.</p>
               <div className="flex gap-2">
                 <button className="btn-primary flex-1">Submit request</button>
                 <button type="button" className="btn-ghost" onClick={() => setShowBranch(false)}>Cancel</button>

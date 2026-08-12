@@ -9,17 +9,17 @@ export default function NaacReport() {
     fetch('/api/reports/naac').then((x) => x.json()).then((d) => setR(d.report));
     fetch('/api/reports/mentor-list').then((x) => x.json()).then((d) => setList(d.list || []));
   }, []);
-  if (!r) return <div className="p-10 text-center text-gray-400">Loading report…</div>;
+  if (!r) return <div className="p-10 text-center text-ink/40">Loading report…</div>;
 
   return (
-    <div className="max-w-4xl mx-auto p-6 bg-white">
+    <div className="min-h-screen bg-cream"><div className="max-w-4xl mx-auto p-6 bg-white border-x-2 border-ink print:border-0">
       <ReportHeader
         title="NAAC — Mentor-Mentee & Student Support Report"
         subtitle="Criterion 2 (Teaching-Learning) & Criterion 5 (Student Support and Progression)"
         criterion="Key Indicators 2.3.3 (Mentor:Mentee Ratio) · 5.1 (Student Mentoring & Support) · 5.2 (Student Progression)"
       />
 
-      <h3 className="font-semibold text-brand mb-2">A. Mentoring System (Metric 2.3.3)</h3>
+      <h3 className="font-bold text-ink mb-2">A. Mentoring System (Metric 2.3.3)</h3>
       <table className="w-full border-collapse mb-6">
         <tbody>
           <Row label="Total number of Faculty Mentors" value={r.mentors} />
@@ -30,7 +30,7 @@ export default function NaacReport() {
         </tbody>
       </table>
 
-      <h3 className="font-semibold text-brand mb-2">B. Mentoring Activity & Documentation (Metric 5.1)</h3>
+      <h3 className="font-bold text-ink mb-2">B. Mentoring Activity & Documentation (Metric 5.1)</h3>
       <table className="w-full border-collapse mb-6">
         <tbody>
           <Row label="Mentoring meetings conducted" value={r.mentoringMeetings} />
@@ -40,7 +40,7 @@ export default function NaacReport() {
         </tbody>
       </table>
 
-      <h3 className="font-semibold text-brand mb-2">C. Student Progression & Support (Criterion 5)</h3>
+      <h3 className="font-bold text-ink mb-2">C. Student Progression & Support (Criterion 5)</h3>
       <table className="w-full border-collapse mb-6">
         <tbody>
           <Row label="Students placed (%)" value={`${r.progression.placedPercent}%`} />
@@ -50,18 +50,19 @@ export default function NaacReport() {
         </tbody>
       </table>
 
-      <h3 className="font-semibold text-brand mb-2">D. Mentor-wise Mentee List</h3>
+      <h3 className="font-bold text-ink mb-2">D. Mentor-wise Mentee List</h3>
       <table className="w-full border-collapse text-sm mb-6">
         <thead><tr className="bg-brand text-white"><th className="border px-2 py-1 text-left">Mentor</th><th className="border px-2 py-1">Emp. ID</th><th className="border px-2 py-1">Mentees</th></tr></thead>
         <tbody>
           {list.map((m, i) => (
             <tr key={i}><td className="border px-2 py-1">{m.mentor}</td><td className="border px-2 py-1 text-center">{m.employeeId || '—'}</td><td className="border px-2 py-1 text-center">{m.menteeCount}</td></tr>
           ))}
-          {!list.length && <tr><td className="border px-2 py-1 text-gray-400" colSpan={3}>No data.</td></tr>}
+          {!list.length && <tr><td className="border px-2 py-1 text-ink/40" colSpan={3}>No data.</td></tr>}
         </tbody>
       </table>
 
       <Signature />
+    </div>
     </div>
   );
 }

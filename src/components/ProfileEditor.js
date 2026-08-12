@@ -42,9 +42,9 @@ export default function ProfileEditor({ student, onSave, onClose, readOnly }) {
 
   return (
     <div>
-      <div className="flex flex-wrap gap-1 mb-4 border-b">
+      <div className="flex flex-wrap gap-1.5 mb-4 border-b-2 border-ink/15 pb-2">
         {tabs.map(([k, l]) => (
-          <button key={k} onClick={() => setTab(k)} className={`px-3 py-2 text-sm rounded-t ${tab === k ? 'bg-brand text-white' : 'text-gray-600 hover:bg-gray-100'}`}>{l}</button>
+          <button key={k} onClick={() => setTab(k)} className={tab === k ? 'btn-primary !py-1.5 !px-3 text-xs' : 'btn-ghost !py-1.5 !px-3 text-xs'}>{l}</button>
         ))}
       </div>
 
@@ -79,7 +79,7 @@ export default function ProfileEditor({ student, onSave, onClose, readOnly }) {
                   <td className="td"><input className="input w-16" value={s.backlogs} onChange={(e) => setArr('semesterResults', i, 'backlogs', e.target.value)} disabled={readOnly} /></td>
                   <td className="td"><input className="input w-16" value={s.attendancePercent} onChange={(e) => setArr('semesterResults', i, 'attendancePercent', e.target.value)} disabled={readOnly} /></td>
                   <td className="td"><select className="input" value={s.resultStatus} onChange={(e) => setArr('semesterResults', i, 'resultStatus', e.target.value)} disabled={readOnly}><option>PASS</option><option>FAIL</option><option>PENDING</option><option>DETAINED</option></select></td>
-                  <td className="td">{!readOnly && <button className="text-red-500" onClick={() => delArr('semesterResults', i)}>✕</button>}</td>
+                  <td className="td">{!readOnly && <button className="text-brand font-bold" onClick={() => delArr('semesterResults', i)}>✕</button>}</td>
                 </tr>
               ))}
             </tbody>
@@ -103,7 +103,7 @@ export default function ProfileEditor({ student, onSave, onClose, readOnly }) {
               <Field label="CTC (LPA)"><input className="input" value={p.ctcLPA} onChange={(e) => setArr('placements', i, 'ctcLPA', e.target.value)} disabled={readOnly} /></Field>
               <div className="flex gap-1">
                 <select className="input" value={p.status} onChange={(e) => setArr('placements', i, 'status', e.target.value)} disabled={readOnly}><option>OFFERED</option><option>ACCEPTED</option><option>JOINED</option><option>DECLINED</option></select>
-                {!readOnly && <button className="text-red-500 px-2" onClick={() => delArr('placements', i)}>✕</button>}
+                {!readOnly && <button className="text-brand font-bold px-2" onClick={() => delArr('placements', i)}>✕</button>}
               </div>
             </div>
           ))}
@@ -121,7 +121,7 @@ export default function ProfileEditor({ student, onSave, onClose, readOnly }) {
               <Field label="Position"><input className="input" value={a.position} onChange={(e) => setArr('activities', i, 'position', e.target.value)} disabled={readOnly} /></Field>
               <div className="flex gap-1">
                 <input className="input" type="date" value={a.date ? String(a.date).slice(0, 10) : ''} onChange={(e) => setArr('activities', i, 'date', e.target.value)} disabled={readOnly} />
-                {!readOnly && <button className="text-red-500 px-2" onClick={() => delArr('activities', i)}>✕</button>}
+                {!readOnly && <button className="text-brand font-bold px-2" onClick={() => delArr('activities', i)}>✕</button>}
               </div>
             </div>
           ))}
@@ -131,14 +131,14 @@ export default function ProfileEditor({ student, onSave, onClose, readOnly }) {
 
       {tab === 'nba' && (
         <div>
-          <p className="text-xs text-gray-500 mb-2">Course / Programme Outcome attainment levels (0–3) used for NBA OBE reporting.</p>
+          <p className="text-xs text-ink/55 mb-2">Course / Programme Outcome attainment levels (0–3) used for NBA OBE reporting.</p>
           {f.attainments.map((a, i) => (
             <div key={i} className="grid grid-cols-5 gap-2 mb-2 items-end">
               <Field label="Year"><input className="input" value={a.academicYear} onChange={(e) => setArr('attainments', i, 'academicYear', e.target.value)} disabled={readOnly} /></Field>
               <Field label="Course"><input className="input" value={a.course} onChange={(e) => setArr('attainments', i, 'course', e.target.value)} disabled={readOnly} /></Field>
               <Field label="CO attainment"><input className="input" value={a.coAttainment} onChange={(e) => setArr('attainments', i, 'coAttainment', e.target.value)} disabled={readOnly} /></Field>
               <Field label="PO attainment"><input className="input" value={a.poAttainment} onChange={(e) => setArr('attainments', i, 'poAttainment', e.target.value)} disabled={readOnly} /></Field>
-              <div>{!readOnly && <button className="text-red-500 px-2" onClick={() => delArr('attainments', i)}>✕</button>}</div>
+              <div>{!readOnly && <button className="text-brand font-bold px-2" onClick={() => delArr('attainments', i)}>✕</button>}</div>
             </div>
           ))}
           {!readOnly && <button className="btn-ghost" onClick={() => addArr('attainments', emptyAttain)}>+ Add attainment</button>}
@@ -157,7 +157,7 @@ export default function ProfileEditor({ student, onSave, onClose, readOnly }) {
               <option>ACTIVE</option><option>GRADUATED</option><option>DROPPED</option><option>DETAINED</option><option>ON_LEAVE</option>
             </select>
           </Field>
-          <div className="col-span-2 text-xs text-gray-500">
+          <div className="col-span-2 text-xs text-ink/55">
             Setting risk to <Badge tone="red">HIGH</Badge> flags the student in NBA at-risk reports for targeted intervention.
           </div>
         </div>

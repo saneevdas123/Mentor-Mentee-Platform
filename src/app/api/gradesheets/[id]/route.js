@@ -6,7 +6,8 @@ import { getSession } from '@/lib/auth';
 import { json, error } from '@/lib/apiGuard';
 import { canAccessStudent } from '@/lib/access';
 
-export async function GET(req, { params }) {
+export async function GET(req, context) {
+  const params = await context.params;
   const session = await getSession();
   if (!session) return error('Unauthorized', 401);
   await dbConnect();
@@ -17,7 +18,8 @@ export async function GET(req, { params }) {
 }
 
 // Remap course→basket and/or mark verified. Only mentor+ may verify/remap.
-export async function PATCH(req, { params }) {
+export async function PATCH(req, context) {
+  const params = await context.params;
   const session = await getSession();
   if (!session) return error('Unauthorized', 401);
   if (session.role === 'STUDENT') return error('Forbidden', 403);
@@ -66,7 +68,8 @@ export async function PATCH(req, { params }) {
   return json({ ok: true, gradesheet: obj });
 }
 
-export async function DELETE(req, { params }) {
+export async function DELETE(req, context) {
+  const params = await context.params;
   const session = await getSession();
   if (!session) return error('Unauthorized', 401);
   await dbConnect();
