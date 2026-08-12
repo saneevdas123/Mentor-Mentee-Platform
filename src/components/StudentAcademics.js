@@ -156,7 +156,7 @@ export default function StudentAcademics({ student, show }) {
                 <Badge tone={statusTone(b.status)}>{b.status.replace('_', ' ')}</Badge>
               </div>
               {b.reason && <div className="text-sm text-ink/65 mt-1">{b.reason}</div>}
-              {b.mentorRemarks && <div className="text-sm mt-2 bg-accent-yellow border border-ink/20 rounded-xl p-2"><b>Mentor:</b> {b.mentorRemarks} — {b.mentorRecommends ? 'Recommended' : 'Not recommended'}</div>}
+              {b.mentorRemarks && <div className="text-sm mt-2 ui-callout-warn p-2"><b>Mentor:</b> {b.mentorRemarks} — {b.mentorRecommends ? 'Recommended' : 'Not recommended'}</div>}
               {b.decisionRemarks && <div className="text-sm mt-1"><b>Decision:</b> {b.decisionRemarks}</div>}
               {['REQUESTED'].includes(b.status) && <button className="btn-ghost mt-2 py-1" onClick={() => withdrawBranch(b._id)}>Withdraw</button>}
             </div>

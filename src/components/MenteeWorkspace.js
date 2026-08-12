@@ -282,7 +282,7 @@ function BranchPanel({ student, firstYear, requests, onSaved, show }) {
           </div>
           {r.reason && <div className="text-sm text-ink/65 mt-1"><b>Student’s reason:</b> {r.reason}</div>}
           <div className="text-xs text-ink/40 mt-1">Raised {new Date(r.createdAt).toLocaleDateString()} · CGPA at request: {r.currentCGPA ?? '—'}</div>
-          {r.mentorRemarks && <div className="text-sm mt-2 bg-accent-yellow rounded p-2"><b>Your counselling:</b> {r.mentorRemarks} — {r.mentorRecommends ? 'Recommended' : 'Not recommended'}</div>}
+          {r.mentorRemarks && <div className="text-sm mt-2 ui-callout-warn p-2"><b>Your counselling:</b> {r.mentorRemarks} — {r.mentorRecommends ? 'Recommended' : 'Not recommended'}</div>}
 
           {['REQUESTED'].includes(r.status) && (
             counselId === r._id ? (

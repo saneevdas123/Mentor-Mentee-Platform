@@ -372,10 +372,10 @@ export default function HodClient({ me }) {
               <div className="ui-callout-ok p-2">Created: <b>{importResult.created}</b></div>
               <div className="ui-callout-soft p-2">Updated: <b>{importResult.updated}</b></div>
               <div className="ui-callout-warn p-2">Mapped: <b>{importResult.mapped}</b></div>
-              <div className="ui-callout p-2 bg-accent-pink/90">Credentials: <b>{importResult.credentialsIssued}</b></div>
+              <div className="ui-callout-danger p-2">Credentials: <b>{importResult.credentialsIssued}</b></div>
             </div>
             {importResult.errors?.length > 0 && (
-              <div className="ui-callout p-2 max-h-40 overflow-y-auto bg-accent-pink/90">
+              <div className="ui-callout-danger p-2 max-h-40 overflow-y-auto">
                 <div className="font-bold text-ink mb-1">{importResult.errors.length} issue(s):</div>
                 {importResult.errors.map((e, i) => <div key={i} className="text-brand-dark">Row {e.row}: {e.error}</div>)}
               </div>

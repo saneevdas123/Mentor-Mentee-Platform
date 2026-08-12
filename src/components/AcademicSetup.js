@@ -185,7 +185,7 @@ export function BranchDecisions({ show }) {
               </div>
               <div className="text-sm mt-1">{r.currentProgramme || '—'} → <b className="text-brand">{r.requestedProgramme}</b> · CGPA {r.currentCGPA ?? '—'}</div>
               {r.reason && <div className="text-sm text-ink/65 mt-1"><b>Reason:</b> {r.reason}</div>}
-              <div className="text-sm mt-2 bg-accent-yellow border border-ink/20 rounded-xl p-2"><b>Mentor ({r.mentor?.name || '—'}):</b> {r.mentorRemarks || '—'} — {r.mentorRecommends ? 'Recommended' : 'Not recommended'}</div>
+              <div className="text-sm mt-2 ui-callout-warn p-2"><b>Mentor ({r.mentor?.name || '—'}):</b> {r.mentorRemarks || '—'} — {r.mentorRecommends ? 'Recommended' : 'Not recommended'}</div>
               <textarea className="input mt-2" rows={2} placeholder="Decision remarks" value={remarks[r._id] || ''} onChange={(e) => setRemarks({ ...remarks, [r._id]: e.target.value })} />
               <div className="flex gap-2 mt-2">
                 <button className="btn-primary" onClick={() => decide(r._id, 'APPROVED')}>Approve</button>

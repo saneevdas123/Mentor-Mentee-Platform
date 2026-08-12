@@ -119,7 +119,7 @@ export default function StudentClient({ me }) {
                 </div>
                 <div className="text-sm text-ink/65 mt-1">{i.description}</div>
                 {(i.responses || []).map((r, x) => (
-                  <div key={x} className="text-sm bg-accent-yellow border border-ink/20 rounded-xl p-2 mt-2"><b>{r.byName}:</b> {r.message}</div>
+                  <div key={x} className="text-sm ui-callout-warn p-2 mt-2"><b>{r.byName}:</b> {r.message}</div>
                 ))}
               </div>
             ))}

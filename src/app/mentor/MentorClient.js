@@ -264,7 +264,7 @@ export default function MentorClient({ me }) {
             </div>
             <div className="max-h-40 overflow-y-auto space-y-2">
               {(respondIssue.responses || []).map((r, i) => (
-                <div key={i} className="text-sm bg-accent-yellow border border-ink/20 rounded-xl p-2">
+                <div key={i} className="text-sm ui-callout-warn p-2">
                   <b>{r.byName} ({r.byRole})</b>: {r.message}
                 </div>
               ))}

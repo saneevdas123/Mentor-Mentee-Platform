@@ -43,11 +43,12 @@ export function TabBar({ children, className = '' }) {
 }
 
 export function Stat({ label, value, sub, tone = 'brand' }) {
+  // Keep neo card frame (matches theme). Label/sub stay plain text — no inner chips.
   return (
     <div className={`card p-3.5 sm:p-5 ${STAT_ACCENTS[tone] || STAT_ACCENTS.brand}`}>
       <div className="text-[10px] sm:text-xs font-bold text-ink/55 uppercase tracking-wide">{label}</div>
       <div className={`mt-1.5 sm:mt-2 text-2xl sm:text-3xl font-bold tracking-tight ${STAT_TEXT[tone] || STAT_TEXT.brand}`}>{value}</div>
-      {sub && <div className="mt-1 text-xs font-medium text-ink/55">{sub}</div>}
+      {sub ? <div className="mt-1 text-xs font-medium text-ink/55">{sub}</div> : null}
     </div>
   );
 }

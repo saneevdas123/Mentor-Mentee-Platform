@@ -983,17 +983,36 @@ html.js-landing .reveal.is-in {
   .ui-nest-muted {
     @apply border border-ink/10 rounded-xl bg-cream/70;
   }
+  /* Notices: soft tint + left accent — not a full ink outline */
+  .ui-callout,
+  .ui-callout-warn,
+  .ui-callout-soft,
+  .ui-callout-ok,
+  .ui-callout-danger {
+    @apply rounded-xl;
+    border: none;
+    border-left-width: 4px;
+    border-left-style: solid;
+  }
   .ui-callout {
-    @apply border border-ink/10 rounded-xl;
+    @apply bg-cream/80;
+    border-left-color: rgba(20, 20, 20, 0.3);
   }
   .ui-callout-warn {
-    @apply border border-ink/10 rounded-xl bg-accent-yellow/90;
+    @apply bg-accent-yellow;
+    border-left-color: #F9CA24;
   }
   .ui-callout-soft {
-    @apply border border-ink/10 rounded-xl bg-accent-peach/90;
+    @apply bg-accent-peach;
+    border-left-color: #E8A87C;
   }
   .ui-callout-ok {
-    @apply border border-ink/10 rounded-xl bg-accent-mint/90;
+    @apply bg-accent-mint;
+    border-left-color: #58C6B1;
+  }
+  .ui-callout-danger {
+    @apply bg-brand-light;
+    border-left-color: #FF4B3E;
   }
 }
 
