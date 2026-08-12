@@ -117,6 +117,51 @@ html.js-landing {
   overflow-x: clip;
 }
 
+/* Login card — animated border loader while submitting */
+.login-board {
+  position: relative;
+  border-radius: 1.25rem;
+  padding: 2px;
+  background: #141414;
+  isolation: isolate;
+}
+.login-board-inner {
+  position: relative;
+  z-index: 1;
+  border-radius: calc(1.25rem - 2px);
+  background: #FDF8F0;
+  border: 2px solid #141414;
+  padding: 1.5rem;
+}
+.login-board.is-loading {
+  background: transparent;
+  box-shadow: 4px 4px 0 0 #141414;
+}
+.login-board.is-loading::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: conic-gradient(#FF4B3E, #F9CA24, #58C6B1, #FF4B3E, #141414, #FF4B3E);
+  animation: login-border-spin 0.9s linear infinite;
+  z-index: 0;
+}
+.login-board.is-loading .login-board-inner {
+  border-color: transparent;
+}
+@keyframes login-border-spin {
+  to { transform: rotate(360deg); }
+}
+.login-btn-spinner {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  animation: login-border-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
 .ticker-eyes {
   display: inline-flex;
   align-items: center;
@@ -285,7 +330,9 @@ html.js-landing .reveal.is-in {
   .tape,
   .hero-rise,
   .hero-panel,
-  .eye-blink {
+  .eye-blink,
+  .login-board.is-loading::before,
+  .login-btn-spinner {
     animation: none !important;
   }
   .hero-rise,
