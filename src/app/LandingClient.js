@@ -278,15 +278,15 @@ export default function LandingClient() {
       </div>
 
       {/* Hero — one viewport composition (Monitor YT style) */}
-      <section className="hero-stage hero-fold max-w-6xl mx-auto px-3 sm:px-4 py-8 sm:py-10 md:py-12 grid md:grid-cols-2 gap-8 md:gap-10 items-center">
-        <div className="relative z-10 min-w-0">
-          <p className="hero-rise hero-d1 text-brand font-semibold italic text-[15px] mb-2 sm:mb-3">
+      <section className="hero-stage max-w-6xl mx-auto px-3 sm:px-4 pt-6 pb-10 sm:pt-8 sm:pb-12 md:pt-10 md:pb-14 grid md:grid-cols-2 gap-6 md:gap-10 items-start md:items-center">
+        <div className="relative z-10 min-w-0 md:pt-1">
+          <p className="hero-rise hero-d1 text-brand font-semibold italic text-[15px] mb-2">
             for CUTM mentors &amp; mentees
           </p>
-          <h1 className="hero-rise hero-d2 text-[1.75rem] sm:text-[2.35rem] md:text-[2.85rem] lg:text-[3.15rem] font-bold leading-[1.06] tracking-tight mb-3 sm:mb-4">
+          <h1 className="hero-rise hero-d2 text-[1.75rem] sm:text-[2.35rem] md:text-[2.85rem] lg:text-[3.15rem] font-bold leading-[1.06] tracking-tight mb-3">
             One place for credits, counselling, and mentoring meetings.
           </h1>
-          <p className="hero-rise hero-d3 text-ink/70 text-[15px] sm:text-base leading-relaxed mb-5 sm:mb-6 max-w-lg">
+          <p className="hero-rise hero-d3 text-ink/70 text-[15px] sm:text-base leading-relaxed mb-5 max-w-lg">
             Mentors keep mentee work in one dashboard. Students see their credit plan.
             When NAAC or IQAC asks for proof, the numbers are already here.
           </p>
@@ -307,8 +307,7 @@ export default function LandingClient() {
           </p>
         </div>
 
-        <div className="relative z-10 hero-panel w-full max-w-[22rem] sm:max-w-md mx-auto md:max-w-none md:mx-0">
-          {/* Peek eyes — same scale as Monitor YT */}
+        <div className="relative z-10 hero-panel w-full max-w-[22rem] sm:max-w-md mx-auto md:max-w-none md:mx-0 mt-1">
           <div
             className="absolute -top-3 right-5 sm:-top-3.5 sm:right-6 z-30"
             data-hero-eyes="true"
