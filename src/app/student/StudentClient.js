@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Shell from '@/components/Shell';
-import { Stat, Card, Modal, Field, Badge, statusTone, useToast } from '@/components/ui';
+import { Stat, Card, Modal, Field, FieldGrid, Badge, statusTone, useToast, PageHead, TabBar } from '@/components/ui';
 import ProfileEditor from '@/components/ProfileEditor';
 import StudentAcademics from '@/components/StudentAcademics';
 import { fetchJson } from '@/lib/fetchJson';
@@ -57,21 +57,24 @@ export default function StudentClient({ me }) {
 
   return (
     <Shell role="STUDENT" name={me.name} nav={NAV}>
-      <h1 className="text-2xl font-bold mb-1 tracking-tight text-ink">My Dashboard</h1>
-      <p className="text-ink/55 mb-6 text-sm">View your academic profile, placements, activities and raise issues to your mentor.</p>
+      <PageHead
+        eyebrow="Student"
+        title="My Dashboard"
+        subtitle="View your academic profile, placements, activities and raise issues to your mentor."
+      />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
         <Stat label="CGPA" value={profile?.latestCGPA ?? '—'} />
         <Stat label="Live Backlogs" value={profile?.liveBacklogs ?? 0} tone={profile?.liveBacklogs ? 'red' : 'green'} />
         <Stat label="Placements" value={(profile?.placements || []).length} tone="gray" />
         <Stat label="Activities" value={(profile?.activities || []).length} tone="gray" />
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-4">
+      <TabBar>
         {[['overview', 'Overview'], ['academics', 'Academics'], ['credits', 'Credits & Counselling'], ['issues', 'My Issues'], ['meetings', 'Meetings']].map(([k, l]) => (
           <button key={k} className={tab === k ? 'btn-primary' : 'btn-ghost'} onClick={() => setTab(k)}>{l}</button>
         ))}
-      </div>
+      </TabBar>
 
       {tab === 'overview' && profile && (
         <Card title="Profile" actions={<button className="btn-ghost" onClick={() => setShowProfile(true)}>View full profile</button>}>
@@ -144,19 +147,51 @@ export default function StudentClient({ me }) {
         </Card>
       )}
 
-      <Modal open={showIssue} onClose={() => setShowIssue(false)} title="Raise an Issue">
-        <form onSubmit={raiseIssue} className="space-y-3">
-          <Field label="Subject"><input name="subject" className="input" required /></Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Category"><select name="category" className="input"><option>ACADEMIC</option><option>ATTENDANCE</option><option>PLACEMENT</option><option>FINANCIAL</option><option>PSYCHOLOGICAL</option><option>HOSTEL</option><option>OTHER</option></select></Field>
-            <Field label="Priority"><select name="priority" className="input"><option>LOW</option><option>MEDIUM</option><option>HIGH</option><option>URGENT</option></select></Field>
-          </div>
-          <Field label="Description"><textarea name="description" className="input" rows={4} required /></Field>
-          <button className="btn-primary w-full">Submit to mentor</button>
+      <Modal
+        open={showIssue}
+        onClose={() => setShowIssue(false)}
+        title="Raise an Issue"
+        description="Your mentor will see this and can reply from their dashboard."
+      >
+        <form onSubmit={raiseIssue} className="ui-form-stack">
+          <Field label="Subject">
+            <input name="subject" className="input" required placeholder="Short summary of the issue" />
+          </Field>
+          <FieldGrid>
+            <Field label="Category">
+              <select name="category" className="input" defaultValue="ACADEMIC">
+                <option value="ACADEMIC">Academic</option>
+                <option value="ATTENDANCE">Attendance</option>
+                <option value="PLACEMENT">Placement</option>
+                <option value="FINANCIAL">Financial</option>
+                <option value="PSYCHOLOGICAL">Psychological</option>
+                <option value="HOSTEL">Hostel</option>
+                <option value="OTHER">Other</option>
+              </select>
+            </Field>
+            <Field label="Priority">
+              <select name="priority" className="input" defaultValue="MEDIUM">
+                <option value="LOW">Low</option>
+                <option value="MEDIUM">Medium</option>
+                <option value="HIGH">High</option>
+                <option value="URGENT">Urgent</option>
+              </select>
+            </Field>
+          </FieldGrid>
+          <Field label="Description" hint="Share enough detail for your mentor to help.">
+            <textarea name="description" className="input" rows={4} required placeholder="What happened, and what do you need help with?" />
+          </Field>
+          <button className="btn-primary hero-cta-shine w-full !py-3">Submit to mentor</button>
         </form>
       </Modal>
 
-      <Modal open={showProfile} onClose={() => setShowProfile(false)} title="My Full Profile" wide>
+      <Modal
+        open={showProfile}
+        onClose={() => setShowProfile(false)}
+        title="My Full Profile"
+        description="Read-only view of your mentoring profile."
+        wide
+      >
         {profile && <ProfileEditor student={profile} readOnly />}
       </Modal>
       {node}

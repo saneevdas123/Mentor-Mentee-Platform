@@ -1,7 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Shell from '@/components/Shell';
-import { Stat, Card, Modal, Field, Badge, riskTone, statusTone, useToast } from '@/components/ui';
+import { Stat, Card, Modal, Field, Badge, riskTone, statusTone, useToast, PageHead, TabBar } from '@/components/ui';
 import ProfileEditor from '@/components/ProfileEditor';
 import MenteeWorkspace from '@/components/MenteeWorkspace';
 import { fetchJson } from '@/lib/fetchJson';
@@ -89,21 +89,24 @@ export default function MentorClient({ me }) {
 
   return (
     <Shell role="MENTOR" name={me.name} nav={NAV}>
-      <h1 className="text-2xl font-bold mb-1 tracking-tight text-ink">Mentor Dashboard</h1>
-      <p className="text-ink/55 mb-6 text-sm">Update mentee profiles, schedule meetings and record minutes.</p>
+      <PageHead
+        eyebrow="Faculty Mentor"
+        title="Mentor Dashboard"
+        subtitle="Update mentee profiles, schedule meetings and record minutes."
+      />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
         <Stat label="My Mentees" value={students.length} />
         <Stat label="At Risk" value={highRisk} tone={highRisk ? 'red' : 'green'} />
         <Stat label="Open Issues" value={openIssues} tone={openIssues ? 'amber' : 'green'} />
         <Stat label="Meetings" value={meetings.length} tone="gray" />
       </div>
 
-      <div className="flex flex-wrap gap-2 mb-4">
+      <TabBar>
         {[['mentees', 'Mentees'], ['meetings', 'Meetings'], ['minutes', 'Minutes'], ['issues', 'Issues']].map(([k, l]) => (
           <button key={k} className={tab === k ? 'btn-primary' : 'btn-ghost'} onClick={() => setTab(k)}>{l}</button>
         ))}
-      </div>
+      </TabBar>
 
       {tab === 'mentees' && (
         <Card title="My Mentees" actions={<span className="flex gap-2"><a className="btn-ghost" href="/api/reports/learners?format=xlsx">Learner report (Excel)</a><a className="btn-ghost" href="/api/reports/interactions">Interaction report (Excel)</a></span>}>
@@ -210,10 +213,16 @@ export default function MentorClient({ me }) {
         {editing && <ProfileEditor student={editing} onSave={saveProfile} onClose={() => setEditing(null)} />}
       </Modal>
 
-      {/* Schedule meeting */}
-      <Modal open={showMeet} onClose={() => setShowMeet(false)} title="Schedule Meeting">
-        <form onSubmit={scheduleMeeting} className="space-y-3">
-          <Field label="Title"><input className="input" required onChange={(e) => setMeetForm({ ...meetForm, title: e.target.value })} /></Field>
+      <Modal
+        open={showMeet}
+        onClose={() => setShowMeet(false)}
+        title="Schedule Meeting"
+        description="We’ll create a Meet link, email invites, and draft the minutes."
+      >
+        <form onSubmit={scheduleMeeting} className="ui-form-stack">
+          <Field label="Title">
+            <input className="input" required placeholder="Weekly mentoring — CSE batch" onChange={(e) => setMeetForm({ ...meetForm, title: e.target.value })} />
+          </Field>
           <Field label="Type">
             <select className="input" value={meetForm.type} onChange={(e) => setMeetForm({ ...meetForm, type: e.target.value })}>
               <option value="WEEKLY_MENTORING">Weekly mentoring (mentees)</option>
@@ -221,39 +230,59 @@ export default function MentorClient({ me }) {
               <option value="ADHOC">Ad-hoc</option>
             </select>
           </Field>
-          <Field label="Date & time"><input className="input" type="datetime-local" required onChange={(e) => setMeetForm({ ...meetForm, scheduledAt: e.target.value })} /></Field>
-          <Field label="Agenda"><textarea className="input" rows={2} onChange={(e) => setMeetForm({ ...meetForm, agenda: e.target.value })} /></Field>
-          <p className="text-xs text-ink/55">A Google Meet link is generated and invitations are emailed automatically. A minutes draft is created.</p>
-          <button className="btn-primary w-full">Schedule & notify</button>
+          <Field label="Date & time">
+            <input className="input" type="datetime-local" required onChange={(e) => setMeetForm({ ...meetForm, scheduledAt: e.target.value })} />
+          </Field>
+          <Field label="Agenda" optional>
+            <textarea className="input" rows={2} placeholder="What will you cover in this session?" onChange={(e) => setMeetForm({ ...meetForm, agenda: e.target.value })} />
+          </Field>
+          <button className="btn-primary hero-cta-shine w-full !py-3">Schedule & notify</button>
         </form>
       </Modal>
 
-      {/* Minutes editor */}
-      <Modal open={!!viewMin} onClose={() => setViewMin(null)} title="Minutes of Meeting" wide>
+      <Modal
+        open={!!viewMin}
+        onClose={() => setViewMin(null)}
+        title="Minutes of Meeting"
+        description="Capture what was discussed so IQAC has a record later."
+        wide
+      >
         {viewMin && <MinutesEditor m={viewMin} onSave={saveMinutes} />}
       </Modal>
 
-      {/* Respond to issue */}
-      <Modal open={!!respondIssue} onClose={() => setRespondIssue(null)} title="Respond to Issue">
+      <Modal
+        open={!!respondIssue}
+        onClose={() => setRespondIssue(null)}
+        title="Respond to Issue"
+        description="Write a clear reply and update the status."
+      >
         {respondIssue && (
-          <div>
-            <div className="bg-cream rounded p-3 mb-3 text-sm">
+          <div className="ui-form-stack">
+            <div className="bg-white border-2 border-ink rounded-xl p-3 text-sm shadow-hard-sm">
               <div className="font-medium">{respondIssue.subject}</div>
-              <div className="text-ink/65 mt-1">{respondIssue.description}</div>
+              <div className="text-ink/65 mt-1 leading-relaxed">{respondIssue.description}</div>
             </div>
-            <div className="max-h-40 overflow-y-auto mb-3 space-y-2">
+            <div className="max-h-40 overflow-y-auto space-y-2">
               {(respondIssue.responses || []).map((r, i) => (
-                <div key={i} className="text-sm bg-accent-yellow border border-ink/20 rounded-xl p-2"><b>{r.byName} ({r.byRole})</b>: {r.message}</div>
+                <div key={i} className="text-sm bg-accent-yellow border border-ink/20 rounded-xl p-2">
+                  <b>{r.byName} ({r.byRole})</b>: {r.message}
+                </div>
               ))}
             </div>
-            <form onSubmit={respond} className="space-y-3">
-              <Field label="Response"><textarea name="message" className="input" rows={3} required /></Field>
-              <Field label="Update status">
+            <form onSubmit={respond} className="ui-form-stack">
+              <Field label="Your response">
+                <textarea name="message" className="input" rows={3} required placeholder="What did you advise or decide?" />
+              </Field>
+              <Field label="Status">
                 <select name="status" className="input" defaultValue={respondIssue.status}>
-                  <option>OPEN</option><option>IN_PROGRESS</option><option>RESOLVED</option><option>ESCALATED</option><option>CLOSED</option>
+                  <option value="OPEN">Open</option>
+                  <option value="IN_PROGRESS">In progress</option>
+                  <option value="RESOLVED">Resolved</option>
+                  <option value="ESCALATED">Escalated</option>
+                  <option value="CLOSED">Closed</option>
                 </select>
               </Field>
-              <button className="btn-primary w-full">Send response</button>
+              <button className="btn-primary hero-cta-shine w-full !py-3">Send response</button>
             </form>
           </div>
         )}
@@ -267,15 +296,15 @@ function MinutesEditor({ m, onSave }) {
   const [f, setF] = useState({ ...m, actionItems: m.actionItems || [], attendees: m.attendees || [] });
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
   return (
-    <div className="space-y-3">
-      <div className="grid grid-cols-2 gap-3 text-sm">
+    <div className="ui-form-stack">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm bg-white border-2 border-ink/15 rounded-xl p-3">
         <div><span className="text-ink/55">Title:</span> <b>{f.title}</b></div>
         <div><span className="text-ink/55">Held on:</span> <b>{f.heldOn ? new Date(f.heldOn).toLocaleString() : '—'}</b></div>
       </div>
-      <Field label="Attendance">
-        <div className="border rounded max-h-40 overflow-y-auto divide-y divide-ink/10">
+      <Field label="Attendance" hint="Tick who was present.">
+        <div className="border-2 border-ink rounded-xl max-h-40 overflow-y-auto divide-y divide-ink/10 bg-white shadow-hard-sm">
           {f.attendees.map((a, i) => (
-            <label key={i} className="flex items-center gap-2 px-3 py-1.5 text-sm">
+            <label key={i} className="flex items-center gap-2 px-3 py-2 text-sm cursor-pointer hover:bg-cream">
               <input type="checkbox" checked={!!a.present} onChange={(e) => { const arr = [...f.attendees]; arr[i] = { ...a, present: e.target.checked }; set('attendees', arr); }} />
               <span>{a.name}</span><span className="text-ink/40">{a.role}</span>
             </label>
@@ -283,13 +312,19 @@ function MinutesEditor({ m, onSave }) {
           {!f.attendees.length && <div className="px-3 py-2 text-ink/40 text-sm">No attendees recorded.</div>}
         </div>
       </Field>
-      <Field label="Agenda"><textarea className="input" rows={2} value={f.agenda || ''} onChange={(e) => set('agenda', e.target.value)} /></Field>
-      <Field label="Discussion"><textarea className="input" rows={4} value={f.discussion || ''} onChange={(e) => set('discussion', e.target.value)} /></Field>
-      <Field label="Decisions"><textarea className="input" rows={2} value={f.decisions || ''} onChange={(e) => set('decisions', e.target.value)} /></Field>
-      <div className="flex gap-2 pt-2 border-t">
-        <button className="btn-primary flex-1" onClick={() => onSave(f)}>Save draft</button>
-        <button className="btn-ghost" onClick={() => onSave({ ...f, finalize: true })}>Finalize</button>
-        <button className="btn-ghost no-print" onClick={() => window.print()}>Print</button>
+      <Field label="Agenda" optional>
+        <textarea className="input" rows={2} value={f.agenda || ''} placeholder="What was planned…" onChange={(e) => set('agenda', e.target.value)} />
+      </Field>
+      <Field label="Discussion">
+        <textarea className="input" rows={4} value={f.discussion || ''} placeholder="Key points from the conversation…" onChange={(e) => set('discussion', e.target.value)} />
+      </Field>
+      <Field label="Decisions" optional>
+        <textarea className="input" rows={2} value={f.decisions || ''} placeholder="What was agreed…" onChange={(e) => set('decisions', e.target.value)} />
+      </Field>
+      <div className="flex flex-col sm:flex-row gap-2 pt-1">
+        <button className="btn-primary hero-cta-shine flex-1 !py-2.5" onClick={() => onSave(f)}>Save draft</button>
+        <button className="btn-ghost !py-2.5" onClick={() => onSave({ ...f, finalize: true })}>Finalize</button>
+        <button className="btn-ghost !py-2.5 no-print" onClick={() => window.print()}>Print</button>
       </div>
     </div>
   );

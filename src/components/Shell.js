@@ -1,63 +1,381 @@
 'use client';
+
+import { useEffect, useId, useRef, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { ROLE_LABELS } from '@/lib/rbac';
+import GooglyEyes from '@/components/GooglyEyes';
 
-export default function Shell({ role, name, nav = [], children }) {
+function Icon({ name, className = 'w-[18px] h-[18px]' }) {
+  const props = {
+    className,
+    viewBox: '0 0 24 24',
+    fill: 'none',
+    stroke: 'currentColor',
+    strokeWidth: 2,
+    strokeLinecap: 'round',
+    strokeLinejoin: 'round',
+    'aria-hidden': true,
+  };
+
+  switch (name) {
+    case 'home':
+      return (
+        <svg {...props}>
+          <path d="M3 11.5 12 4l9 7.5" />
+          <path d="M5 10.5V20h14v-9.5" />
+          <path d="M10 20v-5h4v5" />
+        </svg>
+      );
+    case 'chart':
+      return (
+        <svg {...props}>
+          <path d="M4 19V5" />
+          <path d="M4 19h16" />
+          <path d="M8 16v-5" />
+          <path d="M12 16V8" />
+          <path d="M16 16v-3" />
+        </svg>
+      );
+    case 'file':
+      return (
+        <svg {...props}>
+          <path d="M7 3h7l5 5v13H7z" />
+          <path d="M14 3v5h5" />
+          <path d="M10 13h6M10 17h4" />
+        </svg>
+      );
+    case 'layers':
+      return (
+        <svg {...props}>
+          <path d="m12 3 9 5-9 5-9-5 9-5Z" />
+          <path d="m3 12 9 5 9-5" />
+          <path d="m3 17 9 5 9-5" />
+        </svg>
+      );
+    case 'grid':
+      return (
+        <svg {...props}>
+          <rect x="4" y="4" width="7" height="7" rx="1.5" />
+          <rect x="13" y="4" width="7" height="7" rx="1.5" />
+          <rect x="4" y="13" width="7" height="7" rx="1.5" />
+          <rect x="13" y="13" width="7" height="7" rx="1.5" />
+        </svg>
+      );
+    case 'users':
+      return (
+        <svg {...props}>
+          <circle cx="9" cy="8" r="3" />
+          <path d="M3.5 19a5.5 5.5 0 0 1 11 0" />
+          <circle cx="17" cy="9" r="2.5" />
+          <path d="M15.5 19a4.5 4.5 0 0 1 5-4.2" />
+        </svg>
+      );
+    case 'logout':
+      return (
+        <svg {...props}>
+          <path d="M10 7V5a2 2 0 0 1 2-2h7v18h-7a2 2 0 0 1-2-2v-2" />
+          <path d="M4 12h10" />
+          <path d="m8 8-4 4 4 4" />
+        </svg>
+      );
+    case 'menu':
+      return (
+        <svg {...props}>
+          <path d="M4 7h16M4 12h16M4 17h16" />
+        </svg>
+      );
+    case 'close':
+      return (
+        <svg {...props}>
+          <path d="M6 6l12 12M18 6 6 18" />
+        </svg>
+      );
+    default:
+      return (
+        <svg {...props}>
+          <circle cx="12" cy="12" r="8" />
+        </svg>
+      );
+  }
+}
+
+function navIcon(item) {
+  if (item.icon) return item.icon;
+  const h = `${item.href} ${item.label}`.toLowerCase();
+  if (h.includes('basket') || h.includes('credit')) return 'layers';
+  if (h.includes('naac') || h.includes('nirf') || h.includes('nba') || h.includes('report')) return 'chart';
+  if (h.includes('mentor') || h.includes('student') || h.includes('user')) return 'users';
+  if (h.includes('overview') || h.includes('dashboard') || h.endsWith('/admin') || h.endsWith('/dean') || h.endsWith('/hod') || h.endsWith('/mentor') || h.endsWith('/student')) return 'home';
+  if (h.includes('plan')) return 'file';
+  return 'grid';
+}
+
+function isActivePath(pathname, href, allHrefs = []) {
+  if (pathname === href) return true;
+  if (!href || href === '/' || !pathname.startsWith(`${href}/`)) return false;
+  // don't mark parent active when a more specific nav item matches
+  const longerMatch = allHrefs.some(
+    (h) => h !== href && h.length > href.length && (pathname === h || pathname.startsWith(`${h}/`))
+  );
+  return !longerMatch;
+}
+
+function NavList({ nav, pathname, onNavigate, activeNav, onNavChange }) {
+  const hrefs = nav.map((n) => n.href).filter(Boolean);
+  const tabMode = typeof onNavChange === 'function';
+
+  return (
+    <nav className="shell-nav" aria-label="Main">
+      {nav.map((n) => {
+        const id = n.id || n.href;
+        const active = tabMode
+          ? activeNav === id
+          : isActivePath(pathname, n.href, hrefs);
+
+        const body = (
+          <>
+            <span className="shell-nav-ico">
+              <Icon name={navIcon(n)} />
+            </span>
+            <span className="shell-nav-label">{n.label}</span>
+            {active ? <span className="shell-nav-pip" aria-hidden /> : null}
+          </>
+        );
+
+        if (tabMode) {
+          return (
+            <button
+              key={id}
+              type="button"
+              onClick={() => {
+                onNavChange(id);
+                onNavigate?.();
+              }}
+              className={`shell-nav-link text-left w-full${active ? ' is-active' : ''}`}
+              aria-current={active ? 'page' : undefined}
+            >
+              {body}
+            </button>
+          );
+        }
+
+        if (n.external || n.target === '_blank') {
+          return (
+            <a
+              key={n.href}
+              href={n.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={onNavigate}
+              className="shell-nav-link"
+            >
+              {body}
+            </a>
+          );
+        }
+
+        return (
+          <Link
+            key={n.href}
+            href={n.href}
+            onClick={onNavigate}
+            className={`shell-nav-link${active ? ' is-active' : ''}`}
+            aria-current={active ? 'page' : undefined}
+          >
+            {body}
+          </Link>
+        );
+      })}
+    </nav>
+  );
+}
+
+function UserMenu({ role, name, onLogout }) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef(null);
+  const menuId = useId();
+  const initials = (name || '?')
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((p) => p[0]?.toUpperCase())
+    .join('') || '?';
+
+  useEffect(() => {
+    function onDoc(e) {
+      if (!wrapRef.current?.contains(e.target)) setOpen(false);
+    }
+    function onKey(e) {
+      if (e.key === 'Escape') setOpen(false);
+    }
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, []);
+
+  return (
+    <div
+      ref={wrapRef}
+      className={`shell-user${open ? ' is-open' : ''}`}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <button
+        type="button"
+        className="shell-user-trigger"
+        aria-expanded={open}
+        aria-controls={menuId}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span className="shell-avatar">{initials}</span>
+        <span className="shell-user-meta hidden sm:flex">
+          <span className="shell-user-name">{name}</span>
+          <span className="shell-user-role">{ROLE_LABELS[role] || role}</span>
+        </span>
+      </button>
+      <div id={menuId} className="shell-user-panel" role="menu">
+        <div className="shell-user-panel-head">
+          <div className="font-bold text-sm text-ink truncate">{name}</div>
+          <div className="text-xs text-ink/55 font-medium">{ROLE_LABELS[role] || role}</div>
+        </div>
+        <button type="button" className="shell-logout" role="menuitem" onClick={onLogout}>
+          <Icon name="logout" className="w-4 h-4" />
+          Sign out
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default function Shell({
+  role,
+  name,
+  nav = [],
+  children,
+  activeNav,
+  onNavChange,
+}) {
   const router = useRouter();
   const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST' });
     router.push('/login');
   }
 
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!mobileOpen) return undefined;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [mobileOpen]);
+
   return (
-    <div className="min-h-screen flex bg-cream">
-      <aside className="w-64 bg-ink text-cream flex-col hidden md:flex no-print border-r-2 border-ink">
-        <div className="px-5 py-5 border-b border-cream/15">
-          <div className="font-bold leading-tight text-lg tracking-tight">CUTM Mentoring</div>
-          <div className="text-xs text-accent mt-1 font-medium">{ROLE_LABELS[role] || role}</div>
+    <div className="shell min-h-screen flex bg-cream">
+      {/* Desktop sidebar — fixed height, no scroll */}
+      <aside className="shell-aside hidden md:flex no-print">
+        <div className="shell-brand">
+          <Link href="/" className="shell-brand-link">
+            <GooglyEyes size={22} />
+            <span className="shell-brand-title">CUTM Mentoring</span>
+          </Link>
+          <div className="shell-brand-role">{ROLE_LABELS[role] || role}</div>
         </div>
-        <nav className="flex-1 p-3 space-y-1.5">
-          {nav.map((n) => {
-            const active = pathname === n.href;
-            return (
-              <Link
-                key={n.href}
-                href={n.href}
-                className={`block rounded-xl px-3 py-2 text-sm font-medium transition-colors ${
-                  active
-                    ? 'bg-brand text-white border-2 border-cream/20 shadow-hard-sm'
-                    : 'text-cream/75 hover:bg-cream/10 hover:text-cream'
-                }`}
-              >
-                {n.label}
-              </Link>
-            );
-          })}
-        </nav>
-        <div className="p-3 border-t border-cream/15">
-          <div className="text-xs text-cream/60 mb-2 px-1 truncate">{name}</div>
-          <button
-            onClick={logout}
-            className="w-full text-left rounded-xl px-3 py-2 text-sm font-medium text-cream/75 hover:bg-cream/10 hover:text-cream"
-          >
+
+        <NavList
+          nav={nav}
+          pathname={pathname}
+          activeNav={activeNav}
+          onNavChange={onNavChange}
+        />
+
+        <div className="shell-aside-foot">
+          <button type="button" className="shell-logout" onClick={logout}>
+            <Icon name="logout" className="w-4 h-4" />
             Sign out
           </button>
         </div>
       </aside>
 
-      <main className="flex-1 min-w-0">
-        <header className="bg-cream border-b-2 border-ink px-6 py-3 flex items-center justify-between no-print">
-          <div className="md:hidden font-bold text-ink">CUTM Mentoring</div>
-          <div className="ml-auto flex items-center gap-3 text-sm">
-            <span className="text-ink/50 font-medium">{ROLE_LABELS[role]}</span>
-            <span className="font-semibold text-ink">{name}</span>
-            <button onClick={logout} className="btn-ghost md:hidden !py-1.5 !px-3 text-xs">Sign out</button>
+      {/* Mobile drawer */}
+      {mobileOpen ? (
+        <div className="shell-drawer md:hidden no-print" role="dialog" aria-modal="true">
+          <button
+            type="button"
+            className="shell-drawer-backdrop"
+            aria-label="Close menu"
+            onClick={() => setMobileOpen(false)}
+          />
+          <aside className="shell-aside shell-aside-mobile">
+            <div className="shell-brand flex items-start justify-between gap-2">
+              <div className="min-w-0">
+                <Link href="/" className="shell-brand-link" onClick={() => setMobileOpen(false)}>
+                  <GooglyEyes size={22} />
+                  <span className="shell-brand-title">CUTM Mentoring</span>
+                </Link>
+                <div className="shell-brand-role">{ROLE_LABELS[role] || role}</div>
+              </div>
+              <button
+                type="button"
+                className="shell-icon-btn !bg-cream !text-ink shrink-0"
+                aria-label="Close menu"
+                onClick={() => setMobileOpen(false)}
+              >
+                <Icon name="close" />
+              </button>
+            </div>
+            <NavList
+              nav={nav}
+              pathname={pathname}
+              activeNav={activeNav}
+              onNavChange={onNavChange}
+              onNavigate={() => setMobileOpen(false)}
+            />
+            <div className="shell-aside-foot">
+              <div className="text-xs text-cream/55 px-1 mb-2 truncate">{name}</div>
+              <button type="button" className="shell-logout" onClick={logout}>
+                <Icon name="logout" className="w-4 h-4" />
+                Sign out
+              </button>
+            </div>
+          </aside>
+        </div>
+      ) : null}
+
+      <main className="shell-main flex-1 min-w-0 flex flex-col">
+        <header className="shell-topbar no-print">
+          <button
+            type="button"
+            className="shell-icon-btn md:hidden"
+            aria-label="Open menu"
+            aria-expanded={mobileOpen}
+            onClick={() => setMobileOpen(true)}
+          >
+            <Icon name="menu" />
+          </button>
+          <Link href="/" className="md:hidden inline-flex items-center gap-1.5 font-bold text-ink tracking-tight min-w-0">
+            <GooglyEyes size={20} />
+            <span className="truncate">CUTM Mentoring</span>
+          </Link>
+          <div className="hidden md:block text-sm font-semibold text-ink/45 tracking-tight">
+            Centurion University
+          </div>
+          <div className="ml-auto">
+            <UserMenu role={role} name={name} onLogout={logout} />
           </div>
         </header>
-        <div className="p-6">{children}</div>
+        <div className="shell-content p-3 sm:p-5 md:p-6">{children}</div>
       </main>
     </div>
   );
