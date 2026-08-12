@@ -6,7 +6,7 @@ import LandingClient from './LandingClient';
 export const metadata = {
   title: 'CUTM Mentoring — Mentor–Mentee Platform',
   description:
-    'Structured mentoring for Centurion University: credit tracking, counselling, meetings, minutes, and NAAC / NIRF / NBA reports.',
+    'Mentor–mentee platform for Centurion University. Track credits, run counselling and meetings, keep minutes, and print NAAC / NIRF / NBA reports.',
 };
 
 export default async function Home() {

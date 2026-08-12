@@ -13,19 +13,30 @@ html, body {
   color: var(--ink);
 }
 
+html.js-landing {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html.js-landing {
+    scroll-behavior: auto;
+  }
+}
+
 @keyframes landing-marquee {
   from { transform: translateX(0); }
   to { transform: translateX(-50%); }
 }
 
 @keyframes hero-rise {
-  from { opacity: 0; transform: translateY(14px); }
-  to { opacity: 1; transform: translateY(0); }
+  from { transform: translateY(12px); filter: none; }
+  to { transform: translateY(0); }
 }
 
 @keyframes hero-panel-in {
-  from { opacity: 0; transform: translateY(18px) scale(0.985); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
+  from { transform: translateY(14px) scale(0.99); }
+  to { transform: translateY(0) scale(1); }
 }
 
 @keyframes hero-float {
@@ -58,10 +69,9 @@ html, body {
   width: max-content;
 }
 
-/* Hero micro-motion — transform/opacity only */
+/* Hero micro-motion — never hide content with opacity:0 (blank-page trap) */
 .hero-rise {
-  opacity: 0;
-  animation: hero-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+  animation: hero-rise 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 .hero-d1 { animation-delay: 0.05s; }
 .hero-d2 { animation-delay: 0.14s; }
@@ -70,8 +80,7 @@ html, body {
 .hero-d5 { animation-delay: 0.44s; }
 
 .hero-panel {
-  opacity: 0;
-  animation: hero-panel-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.2s forwards;
+  animation: hero-panel-in 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both;
 }
 
 .hero-float {
@@ -104,8 +113,27 @@ html, body {
   pointer-events: none;
 }
 
+.landing-page {
+  overflow-x: clip;
+}
+
 .hero-eyes-bob {
+  /* kept for reduce-motion reset; unused on eye wrappers (transform fights pupils) */
   animation: hero-eyes-bob 3.2s ease-in-out infinite;
+}
+
+@media (max-width: 767px) {
+  .hero-float,
+  .hero-card-float {
+    animation: none;
+  }
+  .hero-tilt {
+    transform: none !important;
+  }
+  .land-card:hover {
+    transform: none;
+    box-shadow: 4px 4px 0 0 #141414;
+  }
 }
 
 @keyframes tape-wiggle {
@@ -136,13 +164,17 @@ html, body {
   animation: tape-wiggle 3.5s ease-in-out infinite;
 }
 
-/* Scroll reveal */
+/* Scroll reveal — visible by default; only soft-lift when JS marks ready */
 .reveal {
-  opacity: 0;
-  transform: translateY(22px);
-  transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+  opacity: 1;
+  transform: none;
+  transition: opacity 0.55s cubic-bezier(0.22, 1, 0.36, 1), transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.reveal.is-in {
+html.js-landing .reveal:not(.is-in) {
+  opacity: 0;
+  transform: translateY(18px);
+}
+html.js-landing .reveal.is-in {
   opacity: 1;
   transform: translateY(0);
 }
@@ -223,11 +255,6 @@ html, body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
   .landing-marquee,
   .hero-float,
   .hero-card-float,
@@ -235,14 +262,17 @@ html, body {
   .hero-cta-shine::after,
   .hero-eyes-bob,
   .landing-footer-bar,
-  .tape {
+  .tape,
+  .hero-rise,
+  .hero-panel,
+  .eye-blink {
     animation: none !important;
   }
   .hero-rise,
   .hero-panel,
-  .reveal {
+  .reveal,
+  html.js-landing .reveal:not(.is-in) {
     opacity: 1 !important;
-    animation: none !important;
     transform: none !important;
   }
   .land-card:hover,
