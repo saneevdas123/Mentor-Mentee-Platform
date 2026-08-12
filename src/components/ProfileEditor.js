@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { Field, Badge } from '@/components/ui';
+import { Field, Badge, TabBar, Tab } from '@/components/ui';
 
 const emptySem = () => ({ semester: '', academicYear: '', sgpa: '', cgpa: '', backlogs: 0, attendancePercent: '', resultStatus: 'PENDING' });
 const emptyPlacement = () => ({ type: 'PLACEMENT', company: '', role: '', ctcLPA: '', status: 'OFFERED' });
@@ -42,11 +42,11 @@ export default function ProfileEditor({ student, onSave, onClose, readOnly }) {
 
   return (
     <div>
-      <div className="flex flex-wrap gap-1.5 mb-4 border-b-2 border-ink/15 pb-2">
+      <TabBar className="!mb-3">
         {tabs.map(([k, l]) => (
-          <button key={k} onClick={() => setTab(k)} className={tab === k ? 'btn-primary !py-1.5 !px-3 text-xs' : 'btn-ghost !py-1.5 !px-3 text-xs'}>{l}</button>
+          <Tab key={k} active={tab === k} onClick={() => setTab(k)} className="!text-xs !px-3 !py-2">{l}</Tab>
         ))}
-      </div>
+      </TabBar>
 
       {tab === 'basic' && (
         <div className="grid grid-cols-2 gap-3">

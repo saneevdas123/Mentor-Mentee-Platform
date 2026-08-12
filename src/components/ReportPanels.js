@@ -161,7 +161,7 @@ export function NirfReportPanel({ embedded = false }) {
       </table>
 
       <h3 className="font-bold text-ink mb-2">D. Recruiters</h3>
-      <div className="border-2 border-ink rounded-neo p-3 text-sm mb-6 bg-cream">
+      <div className="ui-nest-muted p-3 text-sm mb-6">
         {r.recruiters?.length ? r.recruiters.join(', ') : <span className="text-ink/40">No recruiter data recorded.</span>}
       </div>
 

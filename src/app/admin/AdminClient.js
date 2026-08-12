@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Shell from '@/components/Shell';
-import { Stat, Card, Modal, Field, FieldGrid, Badge, useToast, PageHead, TabBar } from '@/components/ui';
+import { Stat, Card, Modal, Field, FieldGrid, Badge, useToast, PageHead, TabBar, Tab } from '@/components/ui';
 import { NaacReportPanel, NirfReportPanel, NbaReportPanel } from '@/components/ReportPanels';
 
 const NAV = [
@@ -76,8 +76,8 @@ export default function AdminClient({ me }) {
           </div>
 
           <TabBar>
-            <button className={tab === 'schools' ? 'btn-primary' : 'btn-ghost'} onClick={() => setTab('schools')}>Schools</button>
-            <button className={tab === 'deans' ? 'btn-primary' : 'btn-ghost'} onClick={() => setTab('deans')}>Deans</button>
+            <Tab active={tab === 'schools'} onClick={() => setTab('schools')}>Schools</Tab>
+            <Tab active={tab === 'deans'} onClick={() => setTab('deans')}>Deans</Tab>
           </TabBar>
 
           {tab === 'schools' && (

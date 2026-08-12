@@ -42,6 +42,21 @@ export function TabBar({ children, className = '' }) {
   );
 }
 
+/** Calm underline tab — shared across all role dashboards */
+export function Tab({ active, onClick, children, className = '' }) {
+  return (
+    <button
+      type="button"
+      role="tab"
+      aria-selected={!!active}
+      className={`ui-tab${active ? ' is-active' : ''}${className ? ` ${className}` : ''}`}
+      onClick={onClick}
+    >
+      {children}
+    </button>
+  );
+}
+
 export function Stat({ label, value, sub, tone = 'brand' }) {
   // Keep neo card frame (matches theme). Label/sub stay plain text — no inner chips.
   return (
@@ -53,7 +68,7 @@ export function Stat({ label, value, sub, tone = 'brand' }) {
   );
 }
 
-export function Card({ title, actions, children, className = '', accent }) {
+export function Card({ title, subtitle, actions, children, className = '', accent }) {
   const accents = {
     yellow: 'bg-accent-yellow',
     mint: 'bg-accent-mint',
@@ -63,9 +78,12 @@ export function Card({ title, actions, children, className = '', accent }) {
   return (
     <div className={`card overflow-hidden ${accent ? accents[accent] || '' : 'bg-white'} ${className}`}>
       {(title || actions) && (
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-5 py-3 border-b-2 border-ink/10">
-          <h3 className="font-bold text-ink">{title}</h3>
-          {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between px-4 sm:px-5 py-3 border-b border-ink/10">
+          <div className="min-w-0">
+            {title ? <h3 className="font-bold text-ink">{title}</h3> : null}
+            {subtitle ? <p className="text-xs text-ink/50 mt-0.5 leading-snug">{subtitle}</p> : null}
+          </div>
+          {actions ? <div className="flex flex-wrap gap-2 shrink-0">{actions}</div> : null}
         </div>
       )}
       <div className="p-4 sm:p-5">{children}</div>
@@ -82,6 +100,7 @@ export function Modal({
   children,
   wide,
   footer,
+  nested = false,
 }) {
   const panelRef = useRef(null);
   const titleId = useId();
@@ -117,7 +136,7 @@ export function Modal({
 
   return (
     <div
-      className="ui-modal-backdrop no-print"
+      className={`ui-modal-backdrop no-print${nested ? ' ui-modal-backdrop--nested' : ''}`}
       onClick={onClose}
       role="presentation"
     >
@@ -183,27 +202,31 @@ export function FieldGrid({ children }) {
 
 export function Badge({ children, tone = 'gray' }) {
   const tones = {
-    gray: 'bg-cream text-ink border-ink/25',
-    green: 'bg-accent-mint text-ink border-ink/20',
-    red: 'bg-accent-pink text-ink border-ink/20',
-    amber: 'bg-accent-yellow text-ink border-ink/20',
-    blue: 'bg-white text-ink border-ink/25',
-    brand: 'bg-brand-light text-ink border-brand/40',
+    gray: 'bg-ink/8 text-ink/70',
+    green: 'bg-accent-mint text-ink',
+    red: 'bg-accent-pink text-ink',
+    amber: 'bg-accent-yellow text-ink',
+    blue: 'bg-sky-100 text-ink',
+    brand: 'bg-brand-light text-ink',
   };
   return <span className={`badge ${tones[tone] || tones.gray}`}>{children}</span>;
 }
 
 export function riskTone(r) { return r === 'HIGH' ? 'red' : r === 'MEDIUM' ? 'amber' : 'green'; }
 export function statusTone(s) {
-  return ({ OPEN: 'amber', IN_PROGRESS: 'blue', RESOLVED: 'green', CLOSED: 'gray', ESCALATED: 'red',
-    SCHEDULED: 'blue', NOTIFIED: 'brand', COMPLETED: 'green', CANCELLED: 'gray' })[s] || 'gray';
+  return ({
+    OPEN: 'amber', IN_PROGRESS: 'blue', RESOLVED: 'green', CLOSED: 'gray', ESCALATED: 'red',
+    SCHEDULED: 'blue', NOTIFIED: 'brand', COMPLETED: 'green', CANCELLED: 'gray',
+    REQUESTED: 'amber', COUNSELLED: 'blue', RECOMMENDED: 'green', NOT_RECOMMENDED: 'red',
+    APPROVED: 'green', REJECTED: 'red', WITHDRAWN: 'gray',
+  })[s] || 'gray';
 }
 
 export function useToast() {
   const [msg, setMsg] = useState(null);
   const show = (m, t = 3000) => { setMsg(m); setTimeout(() => setMsg(null), t); };
   const node = msg ? (
-    <div className="fixed bottom-4 right-4 z-50 bg-ink text-cream text-sm font-semibold px-4 py-2.5 rounded-xl border-2 border-ink shadow-hard no-print max-w-sm">
+    <div className="fixed bottom-4 right-4 z-50 bg-ink text-cream text-sm font-semibold px-4 py-2.5 rounded-xl shadow-lg no-print max-w-sm">
       {msg}
     </div>
   ) : null;

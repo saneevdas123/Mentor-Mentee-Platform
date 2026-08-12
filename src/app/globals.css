@@ -419,16 +419,46 @@ html.js-landing .reveal.is-in {
 .shell-tabs {
   display: flex;
   flex-wrap: nowrap;
-  gap: 0.5rem;
+  gap: 0.35rem;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
-  padding-bottom: 0.15rem;
+  padding: 0.2rem;
+  margin-bottom: 0.25rem;
+  border-bottom: 1px solid rgba(20, 20, 20, 0.1);
 }
 .shell-tabs > .btn,
 .shell-tabs > button {
   flex: 0 0 auto;
   white-space: nowrap;
+}
+/* Calm dashboard tabs — not neo CTAs */
+.ui-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.55rem 0.9rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+  color: rgba(20, 20, 20, 0.55);
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  border-radius: 0.65rem 0.65rem 0 0;
+  cursor: pointer;
+  margin-bottom: -1px;
+  transition: color 0.12s ease, background 0.12s ease, border-color 0.12s ease;
+}
+.ui-tab:hover {
+  color: #141414;
+  background: rgba(20, 20, 20, 0.04);
+}
+.ui-tab.is-active {
+  color: #141414;
+  background: rgba(255, 75, 62, 0.08);
+  border-bottom-color: #FF4B3E;
 }
 .shell-nav {
   flex: 1;
@@ -705,6 +735,9 @@ html.js-landing .reveal.is-in {
   backdrop-filter: blur(4px);
   animation: ui-fade-in 0.15s ease-out;
 }
+.ui-modal-backdrop--nested {
+  z-index: 60;
+}
 @media (min-width: 640px) {
   .ui-modal-backdrop {
     align-items: center;
@@ -838,7 +871,7 @@ html.js-landing .reveal.is-in {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
-  color: rgba(20, 20, 20, 0.4);
+  color: rgba(20, 20, 20, 0.55);
 }
 .ui-field-hint {
   margin-top: 0.35rem;
@@ -873,7 +906,12 @@ html.js-landing .reveal.is-in {
   to { transform: translateY(0) scale(1); opacity: 1; }
 }
 
-/* Reusable neo-brutalist component classes */
+/*
+ * Border budget (dashboard app):
+ *   hard neo frame → (a) primary/danger actions, (b) page-level .card / Stat only
+ *   nested surfaces → light border or none (.ui-nest*, .table-wrap, callouts)
+ * Landing / marketing may stay fully neo-brutalist.
+ */
 @layer components {
   .card {
     @apply bg-white rounded-neo border-2 border-ink shadow-hard;
@@ -955,7 +993,7 @@ html.js-landing .reveal.is-in {
   }
 
   .badge {
-    @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold border border-ink/20;
+    @apply inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold border-0 bg-cream text-ink/80;
   }
 
   .th {

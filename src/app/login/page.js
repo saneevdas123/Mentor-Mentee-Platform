@@ -221,7 +221,7 @@ export default function LoginPage() {
                 </p>
 
                 {err && (
-                  <div className="mb-4 text-sm text-ink bg-accent-pink border-2 border-ink rounded-xl px-3 py-2 shadow-hard-sm">
+                  <div className="mb-4 text-sm text-ink ui-callout-danger px-3 py-2">
                     {err}
                   </div>
                 )}

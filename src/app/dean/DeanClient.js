@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Shell from '@/components/Shell';
-import { Stat, Card, Modal, Field, FieldGrid, Badge, useToast, PageHead, TabBar } from '@/components/ui';
+import { Stat, Card, Modal, Field, FieldGrid, Badge, useToast, PageHead, TabBar, Tab } from '@/components/ui';
 import { NaacReportPanel, NirfReportPanel, NbaReportPanel } from '@/components/ReportPanels';
 
 const NAV = [
@@ -74,8 +74,8 @@ export default function DeanClient({ me }) {
           </div>
 
           <TabBar>
-            <button className={tab === 'departments' ? 'btn-primary' : 'btn-ghost'} onClick={() => setTab('departments')}>Departments</button>
-            <button className={tab === 'hods' ? 'btn-primary' : 'btn-ghost'} onClick={() => setTab('hods')}>HoDs</button>
+            <Tab active={tab === 'departments'} onClick={() => setTab('departments')}>Departments</Tab>
+            <Tab active={tab === 'hods'} onClick={() => setTab('hods')}>HoDs</Tab>
           </TabBar>
 
           {tab === 'departments' && (
