@@ -382,3 +382,43 @@ export function credentialsEmail({ name, email, tempPassword, role, loginUrl }) 
     text,
   };
 }
+
+export function gradesheetRequestEmail({ studentName, mentorName, dashboardUrl }) {
+  const dash = httpUrl(dashboardUrl) || `${getSiteUrl()}/student`;
+  const mentor = mentorName || 'Your faculty mentor';
+
+  const bodyHtml = [
+    p(`Hello ${esc(studentName || 'there')},`),
+    p(`<strong>${esc(mentor)}</strong> has asked you to upload your latest semester gradesheet so your credit tracker can be updated.`),
+    detailsTable([
+      metaRow('From', esc(mentor)),
+      metaRow('What to do', 'Sign in and upload a text PDF (not a photo scan).'),
+    ].join('')),
+    note('Use a clear text PDF from the exam cell. Photo scans cannot be read. Your mentor reviews the basket mapping before credits count.'),
+    ctaButton(dash, 'Open your dashboard'),
+    p('If the button does not open, sign in at the usual CUTM Mentoring address and go to Academics.'),
+  ].join('');
+
+  const text = [
+    `Hello ${studentName || 'there'},`,
+    '',
+    `${mentor} has asked you to upload your latest semester gradesheet.`,
+    '',
+    `Open: ${dash}`,
+    '',
+    'Use a text PDF, not a photo scan. Your mentor will review it before credits count.',
+    '',
+    'Mentoring Cell, Centurion University',
+  ].join('\n');
+
+  return {
+    subject: 'CUTM Mentoring — please upload your gradesheet',
+    html: brandedEmail({
+      preheader: `${mentor} asked you to upload your latest gradesheet.`,
+      eyebrow: 'Gradesheet',
+      heading: 'Please upload your gradesheet',
+      bodyHtml,
+    }),
+    text,
+  };
+}

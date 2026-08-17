@@ -2,7 +2,7 @@ import path from 'path';
 import nodemailer from 'nodemailer';
 import { EMAIL_LOGO_CID } from '@/lib/emailTemplates';
 
-export { weeklyMeetingEmail, parentMeetingEmail, credentialsEmail } from '@/lib/emailTemplates';
+export { weeklyMeetingEmail, parentMeetingEmail, credentialsEmail, gradesheetRequestEmail } from '@/lib/emailTemplates';
 
 let transporter = null;
 
@@ -46,12 +46,18 @@ export async function sendMail({ to, subject, html, text }) {
     console.log(`[mailer:dryrun] TO=${to} SUBJECT=${subject}`);
     return { accepted: Array.isArray(to) ? to : [to], dryRun: true };
   }
-  return t.sendMail({
-    from,
-    to,
-    subject,
-    html,
-    text,
-    attachments: html?.includes(`cid:${EMAIL_LOGO_CID}`) ? [logoAttachment()] : undefined,
-  });
+  const payload = { from, to, subject, html, text };
+  const wantsLogo = html?.includes(`cid:${EMAIL_LOGO_CID}`);
+  try {
+    return await t.sendMail({
+      ...payload,
+      attachments: wantsLogo ? [logoAttachment()] : undefined,
+    });
+  } catch (e) {
+    if (wantsLogo) {
+      console.warn('[mailer] send with logo failed, retrying without attachment:', e.message);
+      return t.sendMail(payload);
+    }
+    throw e;
+  }
 }

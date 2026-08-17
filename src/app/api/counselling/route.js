@@ -5,6 +5,9 @@ import Basket from '@/models/Basket';
 import { getSession } from '@/lib/auth';
 import { json, error } from '@/lib/apiGuard';
 import { canAccessStudent, studentIdsInScope } from '@/lib/access';
+import { sendMail, gradesheetRequestEmail } from '@/lib/mailer';
+import { getSiteUrl } from '@/lib/site';
+import User from '@/models/User';
 
 export async function GET(req) {
   const session = await getSession();
@@ -39,7 +42,10 @@ export async function POST(req) {
   if (!b.student) return error('student is required.');
   if (!(await canAccessStudent(session, b.student))) return error('Forbidden', 403);
 
-  const student = await StudentProfile.findById(b.student).select('department school').lean();
+  const student = await StudentProfile.findById(b.student).select('department school name email').lean();
+  if (b.kind === 'GRADESHEET_REQUEST' && !String(student?.email || '').trim()) {
+    return error('This student has no email on file, so the request could not be sent.', 400);
+  }
 
   // Denormalise basket names on recommendations.
   let recommendations = Array.isArray(b.recommendations) ? b.recommendations : [];
@@ -74,5 +80,25 @@ export async function POST(req) {
     createdBy: session.sub,
     createdByRole: session.role,
   });
-  return json({ ok: true, record: rec }, 201);
+
+  let emailed = false;
+  if (b.kind === 'GRADESHEET_REQUEST') {
+    const to = String(student?.email || '').trim();
+    const mentor = session.role === 'MENTOR'
+      ? await User.findById(session.sub).select('name').lean()
+      : null;
+    const { subject, html, text } = gradesheetRequestEmail({
+      studentName: student.name,
+      mentorName: mentor?.name || session.name,
+      dashboardUrl: `${getSiteUrl()}/student`,
+    });
+    try {
+      const sent = await sendMail({ to, subject, html, text });
+      emailed = !sent?.dryRun;
+    } catch (e) {
+      console.warn('[counselling] gradesheet request email failed:', e.message);
+    }
+  }
+
+  return json({ ok: true, record: rec, emailed }, 201);
 }

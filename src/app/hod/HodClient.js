@@ -125,10 +125,11 @@ export default function HodClient({ me }) {
       setErrors({});
       if (data.tempPassword) {
         setCreds({ email: data.student?.email || form.email, pass: data.tempPassword });
-        show.success(data.credentialsEmailed ? 'Student added — credentials emailed' : 'Student added — save the temporary password');
+        if (data.credentialsEmailed) show.success('Student added — credentials emailed');
+        else show.error('Student added, but the email did not send. Copy the password below.');
       } else {
         setShowStudent(false);
-        show.success('Student added');
+        show.error('Student added without a login. Try a different email.');
       }
       load();
     });

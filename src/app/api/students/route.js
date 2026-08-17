@@ -44,24 +44,17 @@ export async function POST(req) {
   const exists = await StudentProfile.findOne({ registrationNo: body.registrationNo });
   if (exists) return error('A student with this registration number already exists.', 409);
 
+  const emailTaken = await StudentProfile.findOne({ email });
+  if (emailTaken) return error('A student with this email already exists. Use a different email.');
+
   const school = session.role === 'ADMIN' ? (body.school || session.school) : session.school;
   const department = session.role === 'ADMIN' || session.role === 'DEAN'
     ? (body.department || session.department)
     : session.department;
 
-  const { issueCredentials: _ignore, ...profile } = body;
-  const student = await StudentProfile.create({
-    ...profile,
-    email,
-    school,
-    department,
-    createdBy: session.sub,
-  });
-
-  let tempPassword = null;
-  let credentialsEmailed = false;
+  let provisioned;
   try {
-    const provisioned = await provisionUser({
+    provisioned = await provisionUser({
       name: body.name,
       email,
       role: 'STUDENT',
@@ -70,13 +63,25 @@ export async function POST(req) {
       department,
       createdBy: session.sub,
     });
-    student.user = provisioned.user._id;
-    await student.save();
-    tempPassword = provisioned.tempPassword;
-    credentialsEmailed = true;
   } catch (e) {
-    console.warn('[students] credential email failed:', e.message);
+    if (e.code === 'DUP_ROLE') return error(e.message, 409);
+    return error(e.message || 'Could not create the student login.');
   }
 
-  return json({ ok: true, student, tempPassword, credentialsEmailed }, 201);
+  const { issueCredentials: _ignore, ...profile } = body;
+  const student = await StudentProfile.create({
+    ...profile,
+    email,
+    school,
+    department,
+    user: provisioned.user._id,
+    createdBy: session.sub,
+  });
+
+  return json({
+    ok: true,
+    student,
+    tempPassword: provisioned.tempPassword,
+    credentialsEmailed: !!provisioned.emailed,
+  }, 201);
 }

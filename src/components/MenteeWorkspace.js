@@ -44,11 +44,13 @@ export default function MenteeWorkspace({ student, onClose }) {
           summary: 'Mentor requested the latest semester gradesheet for credit review.',
         }),
       });
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        show.error('Could not send the gradesheet request');
+        show.error(data.error || 'Could not send the gradesheet request');
         return;
       }
-      show.success('Gradesheet request sent to the student');
+      if (data.emailed) show.success('Request emailed to the student');
+      else show.error('Request saved, but the email did not send. Ask the student in person.');
       load();
     });
   }
