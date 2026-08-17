@@ -59,8 +59,8 @@ async function main() {
   await mongoose.connect(MONGODB_URI);
   console.log('• Connected to MongoDB');
 
-  const adminEmail = (process.env.SEED_ADMIN_EMAIL || 'admin@gmail.com').toLowerCase();
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD || 'Admin@123';
+  const adminEmail = (process.env.SEED_ADMIN_EMAIL || 'admin@cutm.ac.in').toLowerCase();
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD || 'Admin@12345';
   const admin = await upsertUser({
     name: process.env.SEED_ADMIN_NAME || 'System Administrator',
     email: adminEmail,

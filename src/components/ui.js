@@ -91,6 +91,38 @@ export function Card({ title, subtitle, actions, children, className = '', accen
   );
 }
 
+const FIELD_SELECTOR = [
+  'input:not([disabled]):not([type="hidden"]):not([type="submit"]):not([type="button"])',
+  'select:not([disabled])',
+  'textarea:not([disabled])',
+].join(', ');
+
+function modalFields(root) {
+  return [...(root?.querySelectorAll(FIELD_SELECTOR) || [])];
+}
+
+/**
+ * Enter in a text field must not submit the modal form or activate Close.
+ * Browsers treat Enter in an <input> as "submit" (which closes the dialog).
+ * Login is a full page, not a Modal — it is unchanged.
+ */
+function onModalEnter(e) {
+  if (e.key !== 'Enter' || e.defaultPrevented || e.ctrlKey || e.metaKey || e.shiftKey) return;
+  const el = e.target;
+  if (!(el instanceof HTMLElement)) return;
+  if (el.closest('textarea') || el.tagName === 'TEXTAREA') return;
+  if (el.matches('button, [type="submit"], a[href]')) return;
+  if (!el.matches('input, select')) return;
+
+  e.preventDefault();
+  e.stopPropagation();
+
+  const root = el.closest('[role="dialog"]');
+  const fields = modalFields(root);
+  const i = fields.indexOf(el);
+  if (i >= 0 && i < fields.length - 1) fields[i + 1].focus();
+}
+
 /** Polished modal used by every role — focus, escape, scroll lock, sticky chrome */
 export function Modal({
   open,
@@ -114,10 +146,10 @@ export function Modal({
     const t = window.setTimeout(() => {
       const root = panelRef.current;
       if (!root) return;
-      const focusable = root.querySelector(
-        'input:not([disabled]), select:not([disabled]), textarea:not([disabled]), button:not([disabled]), [href]'
-      );
-      focusable?.focus?.();
+      // Never focus × first — Enter on that button closes the dialog ("goes back").
+      const body = root.querySelector('.ui-modal-body');
+      const firstField = modalFields(body)[0];
+      (firstField || body?.querySelector('button:not([disabled])'))?.focus?.();
     }, 30);
 
     function onKey(e) {
@@ -148,6 +180,7 @@ export function Modal({
         aria-describedby={description ? descId : undefined}
         className={`ui-modal-panel ${wide ? 'ui-modal-wide' : ''}`}
         onClick={(e) => e.stopPropagation()}
+        onKeyDown={onModalEnter}
       >
         <div className="ui-modal-head">
           <div className="min-w-0 pr-3">
