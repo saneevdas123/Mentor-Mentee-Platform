@@ -4,6 +4,7 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { ROLE_LABELS } from '@/lib/rbac';
+import { ConfirmDialog } from '@/components/ui';
 import GooglyEyes from '@/components/GooglyEyes';
 
 function Icon({ name, className = 'w-[18px] h-[18px]' }) {
@@ -242,7 +243,15 @@ function UserMenu({ role, name, onLogout }) {
           <div className="font-bold text-sm text-ink truncate">{name}</div>
           <div className="text-xs text-ink/55 font-medium">{ROLE_LABELS[role] || role}</div>
         </div>
-        <button type="button" className="shell-logout" role="menuitem" onClick={onLogout}>
+        <button
+          type="button"
+          className="shell-logout"
+          role="menuitem"
+          onClick={() => {
+            setOpen(false);
+            onLogout();
+          }}
+        >
           <Icon name="logout" className="w-4 h-4" />
           Sign out
         </button>
@@ -262,10 +271,23 @@ export default function Shell({
   const router = useRouter();
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [confirmOut, setConfirmOut] = useState(false);
+  const [signingOut, setSigningOut] = useState(false);
 
-  async function logout() {
-    await fetch('/api/auth/logout', { method: 'POST' });
-    router.replace('/login');
+  function askLogout() {
+    setMobileOpen(false);
+    setConfirmOut(true);
+  }
+
+  async function confirmLogout() {
+    if (signingOut) return;
+    setSigningOut(true);
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      router.replace('/login');
+    } catch {
+      setSigningOut(false);
+    }
   }
 
   useEffect(() => {
@@ -301,7 +323,7 @@ export default function Shell({
         />
 
         <div className="shell-aside-foot">
-          <button type="button" className="shell-logout" onClick={logout}>
+          <button type="button" className="shell-logout" onClick={askLogout}>
             <Icon name="logout" className="w-4 h-4" />
             Sign out
           </button>
@@ -344,7 +366,7 @@ export default function Shell({
             />
             <div className="shell-aside-foot">
               <div className="text-xs text-cream/55 px-1 mb-2 truncate">{name}</div>
-              <button type="button" className="shell-logout" onClick={logout}>
+              <button type="button" className="shell-logout" onClick={askLogout}>
                 <Icon name="logout" className="w-4 h-4" />
                 Sign out
               </button>
@@ -372,11 +394,24 @@ export default function Shell({
             Centurion University
           </div>
           <div className="ml-auto">
-            <UserMenu role={role} name={name} onLogout={logout} />
+            <UserMenu role={role} name={name} onLogout={askLogout} />
           </div>
         </header>
         <div className="shell-content p-3 sm:p-5 md:p-6">{children}</div>
       </main>
+
+      <ConfirmDialog
+        open={confirmOut}
+        onClose={() => setConfirmOut(false)}
+        title="Sign out?"
+        description="You will need to sign in again to return to your dashboard."
+        confirmLabel="Sign out"
+        cancelLabel="Cancel"
+        danger
+        loading={signingOut}
+        loadingText="Signing out…"
+        onConfirm={confirmLogout}
+      />
     </div>
   );
 }

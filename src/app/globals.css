@@ -774,6 +774,18 @@ html.js-landing .reveal.is-in {
 .ui-modal-wide {
   max-width: 48rem;
 }
+.ui-modal-compact {
+  max-width: 24rem;
+}
+.ui-modal-compact .ui-modal-head {
+  border-bottom: none;
+  padding-bottom: 0.15rem;
+}
+.ui-modal-compact .ui-modal-foot {
+  border-top: none;
+  background: #FFFcf7;
+  padding-top: 0.35rem;
+}
 .ui-modal-head {
   display: flex;
   align-items: flex-start;

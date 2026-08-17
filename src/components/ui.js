@@ -134,6 +134,8 @@ export function Modal({
   wide,
   footer,
   nested = false,
+  hideClose = false,
+  compact = false,
 }) {
   const panelRef = useRef(null);
   const onCloseRef = useRef(onClose);
@@ -155,7 +157,8 @@ export function Modal({
       if (root.contains(document.activeElement) && document.activeElement !== root) return;
       const body = root.querySelector('.ui-modal-body');
       const firstField = modalFields(body)[0];
-      (firstField || body?.querySelector('button:not([disabled])'))?.focus?.();
+      const firstBtn = root.querySelector('.ui-modal-foot button:not([disabled]), .ui-modal-close');
+      (firstField || firstBtn)?.focus?.();
     }, 30);
 
     function onKey(e) {
@@ -184,7 +187,7 @@ export function Modal({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descId : undefined}
-        className={`ui-modal-panel ${wide ? 'ui-modal-wide' : ''}`}
+        className={`ui-modal-panel${wide ? ' ui-modal-wide' : ''}${compact ? ' ui-modal-compact' : ''}`}
         onClick={(e) => e.stopPropagation()}
         onKeyDown={onModalEnter}
       >
@@ -195,16 +198,18 @@ export function Modal({
               <p id={descId} className="text-sm text-ink/55 mt-1 leading-snug">{description}</p>
             ) : null}
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="ui-modal-close"
-            aria-label="Close"
-          >
-            ×
-          </button>
+          {hideClose ? null : (
+            <button
+              type="button"
+              onClick={onClose}
+              className="ui-modal-close"
+              aria-label="Close"
+            >
+              ×
+            </button>
+          )}
         </div>
-        <div className="ui-modal-body">{children}</div>
+        {children != null ? <div className="ui-modal-body">{children}</div> : null}
         {footer ? <div className="ui-modal-foot">{footer}</div> : null}
       </div>
     </div>
@@ -272,6 +277,52 @@ export function SubmitButton({
         children
       )}
     </button>
+  );
+}
+
+/** shadcn-style confirm — same modal chrome on every role */
+export function ConfirmDialog({
+  open,
+  onClose,
+  title,
+  description,
+  confirmLabel = 'Continue',
+  cancelLabel = 'Cancel',
+  danger = false,
+  loading = false,
+  loadingText = 'Working…',
+  onConfirm,
+}) {
+  return (
+    <Modal
+      open={open}
+      onClose={loading ? () => {} : onClose}
+      title={title}
+      description={description}
+      hideClose
+      compact
+      footer={(
+        <>
+          <button
+            type="button"
+            className="btn-ghost"
+            onClick={onClose}
+            disabled={loading}
+          >
+            {cancelLabel}
+          </button>
+          <SubmitButton
+            type="button"
+            className={danger ? 'btn-primary' : 'btn-primary'}
+            loading={loading}
+            loadingText={loadingText}
+            onClick={onConfirm}
+          >
+            {confirmLabel}
+          </SubmitButton>
+        </>
+      )}
+    />
   );
 }
 
