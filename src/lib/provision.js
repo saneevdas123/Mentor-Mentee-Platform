@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import User from '@/models/User';
 import { hashPassword } from '@/lib/auth';
 import { sendMail, credentialsEmail } from '@/lib/mailer';
+import { getSiteUrl } from '@/lib/site';
 
 export function tempPassword() {
   // Human-friendly but random: e.g. Cutm-9F3A21
@@ -34,10 +35,10 @@ export async function provisionUser({ name, email, role, phone, employeeId, desi
     createdBy: createdBy || null,
   });
 
-  const loginUrl = `${process.env.APP_URL || 'http://localhost:3000'}/login`;
-  const { subject, html } = credentialsEmail({ name, email: user.email, tempPassword: plain, role, loginUrl });
+  const loginUrl = `${getSiteUrl()}/login`;
+  const { subject, html, text } = credentialsEmail({ name, email: user.email, tempPassword: plain, role, loginUrl });
   try {
-    await sendMail({ to: user.email, subject, html });
+    await sendMail({ to: user.email, subject, html, text });
   } catch (e) {
     // Non-fatal: account still created; admin can resend.
     console.warn('[provision] credential email failed:', e.message);

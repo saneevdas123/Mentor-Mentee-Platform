@@ -97,9 +97,10 @@ export async function runWeeklyMentoring({ dryRun = false } = {}) {
     let sent = 0, failed = 0;
     for (const r of recipients) {
       if (!r.email) continue;
-      const { subject, html } = weeklyMeetingEmail({ recipientName: r.name, meeting });
+      const audience = r.email === mentor.email ? 'mentor' : 'student';
+      const { subject, html, text } = weeklyMeetingEmail({ recipientName: r.name, meeting, audience });
       try {
-        if (!dryRun) await sendMail({ to: r.email, subject, html });
+        if (!dryRun) await sendMail({ to: r.email, subject, html, text });
         sent++;
       } catch (e) {
         failed++;
@@ -194,16 +195,16 @@ export async function runMonthlyParent({ dryRun = false } = {}) {
     let sent = 0, failed = 0;
     // Notify mentor once.
     try {
-      const { subject, html } = parentMeetingEmail({ recipientName: mentor.name, meeting });
-      if (!dryRun) await sendMail({ to: mentor.email, subject, html });
+      const { subject, html, text } = parentMeetingEmail({ recipientName: mentor.name, meeting, audience: 'mentor' });
+      if (!dryRun) await sendMail({ to: mentor.email, subject, html, text });
       sent++;
     } catch { failed++; }
     // Notify each parent (personalised with ward name).
     for (const s of mentees) {
       if (!s.parentEmail) continue;
-      const { subject, html } = parentMeetingEmail({ recipientName: s.name, meeting });
+      const { subject, html, text } = parentMeetingEmail({ recipientName: s.name, meeting, audience: 'parent' });
       try {
-        if (!dryRun) await sendMail({ to: s.parentEmail, subject, html });
+        if (!dryRun) await sendMail({ to: s.parentEmail, subject, html, text });
         sent++;
       } catch { failed++; }
     }

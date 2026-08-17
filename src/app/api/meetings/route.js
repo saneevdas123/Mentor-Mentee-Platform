@@ -68,8 +68,9 @@ export async function POST(req) {
     : [{ email: mentor?.email, name: mentor?.name }, ...mentees.map((s) => ({ email: s.email, name: s.name }))];
   for (const t of targets) {
     if (!t.email) continue;
-    const { subject, html } = tmpl({ recipientName: t.name, meeting });
-    try { await sendMail({ to: t.email, subject, html }); } catch {}
+    const audience = isParent ? 'parent' : (t.email === mentor?.email ? 'mentor' : 'student');
+    const { subject, html, text } = tmpl({ recipientName: t.name, meeting, audience });
+    try { await sendMail({ to: t.email, subject, html, text }); } catch {}
   }
   meeting.status = 'NOTIFIED'; meeting.notificationSentAt = new Date(); await meeting.save();
 
