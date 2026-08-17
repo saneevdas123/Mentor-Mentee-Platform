@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
-export default function ReportHeader({ title, subtitle, criterion, embedded = false }) {
+export default function ReportHeader({ title, subtitle, criterion, scope, embedded = false }) {
   const router = useRouter();
   return (
     <div>
@@ -32,6 +32,7 @@ export default function ReportHeader({ title, subtitle, criterion, embedded = fa
         <h2 className="text-base sm:text-lg font-semibold mt-3 px-1">{title}</h2>
         {subtitle && <div className="text-sm text-ink/55 px-1">{subtitle}</div>}
         {criterion && <div className="text-xs text-ink/40 mt-1 px-1">{criterion}</div>}
+        {scope ? <div className="text-sm font-semibold text-ink mt-2 px-1">Scope: {scope}</div> : null}
         <div className="text-xs text-ink/40 mt-2">Generated on {new Date().toLocaleString()}</div>
       </div>
     </div>

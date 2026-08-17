@@ -62,6 +62,7 @@ export function NaacReportPanel({ embedded = false }) {
         title="NAAC — Mentor-Mentee & Student Support Report"
         subtitle="Criterion 2 (Teaching-Learning) & Criterion 5 (Student Support and Progression)"
         criterion="Key Indicators 2.3.3 (Mentor:Mentee Ratio) · 5.1 (Student Mentoring & Support) · 5.2 (Student Progression)"
+        scope={r.scope}
       />
 
       <h3 className="font-bold text-ink mb-2">A. Mentoring System (Metric 2.3.3)</h3>
@@ -155,6 +156,7 @@ export function NirfReportPanel({ embedded = false }) {
         title="NIRF — Graduation Outcomes (GO) Report"
         subtitle="Parameter 3: Graduation Outcomes  ·  GO = GPH + GUE + GMS"
         criterion="Combined Placement & Higher Studies (GPH) · University Examinations (GUE) · Median Salary (GMS)"
+        scope={r.scope}
       />
 
       <h3 className="font-bold text-ink mb-2">A. Combined Metric — Placement & Higher Studies (GPH)</h3>
@@ -191,8 +193,8 @@ export function NirfReportPanel({ embedded = false }) {
       </div>
 
       <p className="text-xs text-ink/55 mb-6">
-        Note: NIRF requires the median salary computed over placed graduates in the previous three years.
-        Ensure placement records are verified before submission.
+        Note: Cohort is semester 6+, graduated students, and anyone with a confirmed placement / higher-studies / entrepreneurship outcome.
+        First-year and mid-programme students are not counted in Graduation Outcomes. Median salary uses one accepted CTC per placed graduate.
       </p>
 
       <Signature />
@@ -229,6 +231,7 @@ export function NbaReportPanel({ embedded = false }) {
         title="NBA — Outcome-Based Education (OBE) & Mentoring Report"
         subtitle="Student performance, PO/CO attainment and at-risk intervention"
         criterion="Criteria 3 (Course Outcomes / Program Outcomes) · Student mentoring interventions"
+        scope={r.scope}
       />
 
       <h3 className="font-bold text-ink mb-2">A. Academic Performance</h3>

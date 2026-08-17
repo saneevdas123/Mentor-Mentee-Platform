@@ -20,6 +20,8 @@ export default function DeanClient({ me }) {
   const [tab, setTab] = useState('departments');
   const [departments, setDepartments] = useState([]);
   const [hods, setHods] = useState([]);
+  const [mentors, setMentors] = useState([]);
+  const [studentCount, setStudentCount] = useState(0);
   const [showDept, setShowDept] = useState(false);
   const [showHod, setShowHod] = useState(false);
   const [form, setForm] = useState({});
@@ -34,12 +36,16 @@ export default function DeanClient({ me }) {
   }
 
   async function load() {
-    const [d, h] = await Promise.all([
+    const [d, h, m, s] = await Promise.all([
       fetch('/api/departments').then((r) => r.json()),
       fetch('/api/users?role=HOD').then((r) => r.json()),
+      fetch('/api/users?role=MENTOR').then((r) => r.json()),
+      fetch('/api/students').then((r) => r.json()),
     ]);
     setDepartments(d.departments || []);
     setHods(h.users || []);
+    setMentors((m.users || []).filter((u) => u.isActive !== false));
+    setStudentCount((s.students || []).filter((st) => !['DROPPED', 'DETAINED', 'ON_LEAVE'].includes(st.status)).length);
   }
   useEffect(() => { load(); }, []);
 
@@ -133,7 +139,13 @@ export default function DeanClient({ me }) {
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-6">
             <Stat label="Departments" value={departments.length} />
             <Stat label="HoDs" value={hods.length} tone="gray" />
-            <Stat label="Students" value={departments.reduce((a, d) => a + (d.studentCount || 0), 0)} tone="green" />
+            <Stat label="Faculty Mentors" value={mentors.length} />
+            <Stat
+              label="Mentor : Mentee"
+              value={mentors.length ? `1 : ${Math.round(studentCount / mentors.length)}` : 'N/A'}
+              tone="green"
+              sub={`${studentCount} students · NAAC 2.3.3`}
+            />
           </div>
 
           <TabBar>

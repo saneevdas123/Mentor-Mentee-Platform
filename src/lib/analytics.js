@@ -4,6 +4,8 @@ import Mapping from '@/models/Mapping';
 import StudentProfile from '@/models/StudentProfile';
 import Meeting from '@/models/Meeting';
 import Minutes from '@/models/Minutes';
+import School from '@/models/School';
+import Department from '@/models/Department';
 
 function median(nums) {
   const a = nums.filter((n) => typeof n === 'number' && !Number.isNaN(n)).sort((x, y) => x - y);
@@ -27,10 +29,18 @@ function placedCtc(student) {
   return ctcs.length ? Math.max(...ctcs) : null;
 }
 
-function attainmentValue(row, key) {
-  if (typeof row?.[key] === 'number') return row[key];
+function coValue(row) {
+  if (typeof row?.coAttainment === 'number') return row.coAttainment;
   if (typeof row?.attained === 'number') return row.attained;
   if (typeof row?.level === 'number') return row.level;
+  return null;
+}
+
+function poValue(row) {
+  if (typeof row?.poAttainment === 'number') return row.poAttainment;
+  // Older records stored one score as `attained` / `level` — use it for both.
+  if (typeof row?.coAttainment !== 'number' && typeof row?.attained === 'number') return row.attained;
+  if (typeof row?.coAttainment !== 'number' && typeof row?.level === 'number') return row.level;
   return null;
 }
 
@@ -42,6 +52,50 @@ function scope({ school, department }) {
   return f;
 }
 
+/** Enrolled (and graduated) — drop left / detained / on leave. Missing status counts as active. */
+function enrolledFilter(sFilter) {
+  return {
+    ...sFilter,
+    status: { $nin: ['DROPPED', 'DETAINED', 'ON_LEAVE'] },
+  };
+}
+
+/** NIRF GO: final-year / graduated, or anyone with a confirmed outcome. */
+function isGraduationCohort(s) {
+  if (s.status === 'GRADUATED') return true;
+  if ((s.currentSemester || 0) >= 6) return true;
+  return hasOutcome(s, 'PLACEMENT') || hasOutcome(s, 'HIGHER_STUDIES') || hasOutcome(s, 'ENTREPRENEURSHIP');
+}
+
+const CONDUCTED = ['NOTIFIED', 'COMPLETED'];
+
+export function reportFilterFromSession(session, searchParams) {
+  if (session.role === 'DEAN') {
+    if (!session.school) return { error: 'Dean account is not linked to a school.' };
+    return { filter: { school: session.school } };
+  }
+  if (session.role === 'HOD') {
+    if (!session.department) return { error: 'HoD account is not linked to a department.' };
+    return { filter: { department: session.department } };
+  }
+  const filter = {};
+  if (searchParams?.get('school')) filter.school = searchParams.get('school');
+  if (searchParams?.get('department')) filter.department = searchParams.get('department');
+  return { filter };
+}
+
+async function scopeLabel(filter) {
+  if (filter.department) {
+    const d = await Department.findById(filter.department).select('name code').lean();
+    return d ? `${d.name} (${d.code})` : 'Department';
+  }
+  if (filter.school) {
+    const s = await School.findById(filter.school).select('name code').lean();
+    return s ? `${s.name} (${s.code})` : 'School';
+  }
+  return 'University-wide';
+}
+
 /**
  * NAAC report: mentor-mentee ratio (2.3.3), mentoring activity, grievances,
  * progression & support (Criterion 5).
@@ -49,22 +103,24 @@ function scope({ school, department }) {
 export async function naacReport(filter = {}) {
   await dbConnect();
   const sFilter = scope(filter);
+  const live = enrolledFilter(sFilter);
 
-  const mentorFilter = { role: 'MENTOR', isActive: true, ...sFilter };
-  const mentors = await User.countDocuments(mentorFilter);
-  const students = await StudentProfile.countDocuments(sFilter);
-  const mappedStudents = (await Mapping.distinct('student', { active: true, ...sFilter })).length;
+  const mentors = await User.countDocuments({ role: 'MENTOR', isActive: true, ...sFilter });
+  const all = await StudentProfile.find(live).lean();
+  const students = all.length;
+  const studentIds = all.map((s) => s._id);
+  const mappedStudents = studentIds.length
+    ? (await Mapping.distinct('student', { active: true, student: { $in: studentIds } })).length
+    : 0;
 
-  const notCancelled = { status: { $ne: 'CANCELLED' }, ...sFilter };
+  const conducted = { status: { $in: CONDUCTED }, ...sFilter };
   const mentoringMeetings = await Meeting.countDocuments({
-    ...notCancelled,
+    ...conducted,
     type: { $in: ['WEEKLY_MENTORING', 'ADHOC'] },
   });
-  const parentMeetings = await Meeting.countDocuments({ ...notCancelled, type: 'MONTHLY_PARENT' });
+  const parentMeetings = await Meeting.countDocuments({ ...conducted, type: 'MONTHLY_PARENT' });
   const minutesCount = await Minutes.countDocuments(sFilter);
 
-  // Progression (Criterion 5) — only accepted/joined outcomes count as placed.
-  const all = await StudentProfile.find(sFilter).lean();
   const placed = all.filter((s) => hasOutcome(s, 'PLACEMENT')).length;
   const higherStudies = all.filter((s) => hasOutcome(s, 'HIGHER_STUDIES')).length;
   const scholarshipHolders = all.filter((s) => (s.scholarships || []).length > 0).length;
@@ -72,6 +128,7 @@ export async function naacReport(filter = {}) {
   const atRisk = all.filter((s) => s.riskLevel === 'HIGH').length;
 
   return {
+    scope: await scopeLabel(filter),
     ratio: mentors ? `1 : ${Math.round(students / mentors)}` : 'N/A',
     mentors,
     students,
@@ -98,7 +155,8 @@ export async function naacReport(filter = {}) {
 export async function nirfReport(filter = {}) {
   await dbConnect();
   const sFilter = scope(filter);
-  const all = await StudentProfile.find(sFilter).lean();
+  const enrolled = await StudentProfile.find(enrolledFilter(sFilter)).lean();
+  const all = enrolled.filter(isGraduationCohort);
   const total = all.length;
 
   const placedStudents = all.filter((s) => hasOutcome(s, 'PLACEMENT'));
@@ -118,6 +176,7 @@ export async function nirfReport(filter = {}) {
   const gph = pct(gphCount, total);
 
   return {
+    scope: await scopeLabel(filter),
     totalStudents: total,
     placementPercent: pct(placedStudents.length, total),
     higherStudiesPercent: pct(higherStudies.length, total),
@@ -142,7 +201,7 @@ export async function nirfReport(filter = {}) {
 export async function nbaReport(filter = {}) {
   await dbConnect();
   const sFilter = scope(filter);
-  const all = await StudentProfile.find(sFilter).lean();
+  const all = await StudentProfile.find(enrolledFilter(sFilter)).lean();
   const total = all.length;
 
   const cgpas = all.map((s) => s.latestCGPA).filter((x) => typeof x === 'number');
@@ -157,11 +216,10 @@ export async function nbaReport(filter = {}) {
     else bands['<6']++;
   });
 
-  // Attainment averages — accept schema fields and older seed shapes (attained / level).
   let coSum = 0, coN = 0, poSum = 0, poN = 0;
   all.forEach((s) => (s.attainments || []).forEach((a) => {
-    const co = attainmentValue(a, 'coAttainment');
-    const po = attainmentValue(a, 'poAttainment');
+    const co = coValue(a);
+    const po = poValue(a);
     if (co != null) { coSum += co; coN++; }
     if (po != null) { poSum += po; poN++; }
   }));
@@ -169,6 +227,7 @@ export async function nbaReport(filter = {}) {
   const atRisk = all.filter((s) => s.riskLevel === 'HIGH');
 
   return {
+    scope: await scopeLabel(filter),
     totalStudents: total,
     averageCGPA: avgCGPA,
     cgpaDistribution: bands,
@@ -187,13 +246,14 @@ export async function mentorWiseList(filter = {}) {
   const mentors = await User.find({ role: 'MENTOR', isActive: true, ...sFilter }).lean();
   const out = [];
   for (const m of mentors) {
-    const maps = await Mapping.find({ mentor: m._id, active: true }).populate('student').lean();
+    const maps = await Mapping.find({ mentor: m._id, active: true, ...sFilter }).populate('student').lean();
+    const mentees = maps.map((x) => x.student).filter((s) => s && !['DROPPED', 'DETAINED', 'ON_LEAVE'].includes(s.status));
     out.push({
       mentor: m.name,
       email: m.email,
       employeeId: m.employeeId || '',
-      menteeCount: maps.length,
-      mentees: maps.map((x) => x.student).filter(Boolean).map((s) => ({
+      menteeCount: mentees.length,
+      mentees: mentees.map((s) => ({
         registrationNo: s.registrationNo,
         name: s.name,
         programme: s.programme,
