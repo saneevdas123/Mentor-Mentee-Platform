@@ -105,16 +105,22 @@ export default function MenteeWorkspace({ student, onClose }) {
           <LearningLevel student={student} learner={data.learner} onSaved={load} show={show} />
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs text-ink/50">Progress uses verified gradesheets only.</p>
-            <button type="button" className="btn-ghost !py-1.5 !px-3 text-xs" onClick={requestGradesheet} disabled={busy}>
-              {busy ? 'Sending…' : 'Ask for gradesheet'}
-            </button>
+            <SubmitButton
+              type="button"
+              loading={busy}
+              loadingText="Sending email…"
+              className="btn-ghost !py-1.5 !px-3 text-xs"
+              onClick={requestGradesheet}
+            >
+              Ask for gradesheet
+            </SubmitButton>
           </div>
           <CreditTracker progress={data.progress} />
         </div>
       )}
 
       {data && tab === 'gradesheets' && (
-        <GradesheetList gradesheets={gradesheets} onReview={setReviewGs} onAsk={requestGradesheet} />
+        <GradesheetList gradesheets={gradesheets} onReview={setReviewGs} onAsk={requestGradesheet} sending={busy} />
       )}
 
       {data && tab === 'counsel' && (
@@ -145,15 +151,21 @@ export default function MenteeWorkspace({ student, onClose }) {
   );
 }
 
-function GradesheetList({ gradesheets, onReview, onAsk }) {
+function GradesheetList({ gradesheets, onReview, onAsk, sending }) {
   if (!gradesheets.length) {
     return (
       <div className="ui-callout-warn p-4 text-sm">
         <div className="font-semibold text-ink">No gradesheets yet</div>
         <p className="text-ink/65 mt-1">Ask the student to upload a text PDF, then review basket mapping here.</p>
-        <button type="button" className="btn-primary mt-3 !py-2" onClick={onAsk}>
+        <SubmitButton
+          type="button"
+          loading={sending}
+          loadingText="Sending email…"
+          className="btn-primary mt-3 !py-2"
+          onClick={onAsk}
+        >
           Ask student for gradesheet
-        </button>
+        </SubmitButton>
       </div>
     );
   }
