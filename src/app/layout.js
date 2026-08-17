@@ -1,6 +1,7 @@
 import { Outfit } from 'next/font/google';
 import './globals.css';
 import { getSiteUrl, SITE } from '@/lib/site';
+import AppToaster from '@/components/AppToaster';
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -73,6 +74,7 @@ export default function RootLayout({ children }) {
     <html lang="en" className={outfit.variable} suppressHydrationWarning>
       <body className="font-sans antialiased" suppressHydrationWarning>
         {children}
+        <AppToaster />
       </body>
     </html>
   );

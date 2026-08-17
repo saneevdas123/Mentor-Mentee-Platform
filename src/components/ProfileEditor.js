@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { Field, Badge, TabBar, Tab } from '@/components/ui';
+import { Field, Badge, TabBar, Tab, SubmitButton } from '@/components/ui';
 
 const emptySem = () => ({ semester: '', academicYear: '', sgpa: '', cgpa: '', backlogs: 0, attendancePercent: '', resultStatus: 'PENDING' });
 const emptyPlacement = () => ({ type: 'PLACEMENT', company: '', role: '', ctcLPA: '', status: 'OFFERED' });
@@ -165,7 +165,9 @@ export default function ProfileEditor({ student, onSave, onClose, readOnly }) {
 
       {!readOnly && (
         <div className="flex gap-2 mt-5 pt-4 border-t">
-          <button className="btn-primary flex-1" onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save profile'}</button>
+          <SubmitButton type="button" loading={saving} loadingText="Saving profile…" className="btn-primary flex-1" onClick={save}>
+            Save profile
+          </SubmitButton>
           <button className="btn-ghost" onClick={onClose}>Cancel</button>
         </div>
       )}

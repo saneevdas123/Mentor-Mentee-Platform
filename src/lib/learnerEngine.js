@@ -22,7 +22,13 @@ export function defaultCriteria() {
 function avgAttainment(student) {
   const a = student.attainments || [];
   if (!a.length) return null;
-  const vals = a.map((x) => (typeof x.attained === 'number' ? x.attained : x.level)).filter((v) => typeof v === 'number');
+  const vals = a.map((x) => {
+    if (typeof x.coAttainment === 'number') return x.coAttainment;
+    if (typeof x.poAttainment === 'number') return x.poAttainment;
+    if (typeof x.attained === 'number') return x.attained;
+    if (typeof x.level === 'number') return x.level;
+    return null;
+  }).filter((v) => typeof v === 'number');
   if (!vals.length) return null;
   return vals.reduce((s, v) => s + v, 0) / vals.length;
 }

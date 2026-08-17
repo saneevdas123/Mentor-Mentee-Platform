@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { cloneElement, isValidElement, useEffect, useId, useRef, useState } from 'react';
+import { toast } from 'sonner';
 
 const STAT_ACCENTS = {
   brand: 'bg-accent-peach',
@@ -135,9 +136,14 @@ export function Modal({
   nested = false,
 }) {
   const panelRef = useRef(null);
+  const onCloseRef = useRef(onClose);
   const titleId = useId();
   const descId = useId();
+  onCloseRef.current = onClose;
 
+  // Only when the dialog opens — not on every parent re-render.
+  // Callers pass inline onClose={() => setShow...}, so depending on onClose
+  // stole focus back to the first field after each keystroke.
   useEffect(() => {
     if (!open) return undefined;
     const prev = document.body.style.overflow;
@@ -146,14 +152,14 @@ export function Modal({
     const t = window.setTimeout(() => {
       const root = panelRef.current;
       if (!root) return;
-      // Never focus × first — Enter on that button closes the dialog ("goes back").
+      if (root.contains(document.activeElement) && document.activeElement !== root) return;
       const body = root.querySelector('.ui-modal-body');
       const firstField = modalFields(body)[0];
       (firstField || body?.querySelector('button:not([disabled])'))?.focus?.();
     }, 30);
 
     function onKey(e) {
-      if (e.key === 'Escape') onClose?.();
+      if (e.key === 'Escape') onCloseRef.current?.();
     }
     window.addEventListener('keydown', onKey);
 
@@ -162,7 +168,7 @@ export function Modal({
       window.clearTimeout(t);
       window.removeEventListener('keydown', onKey);
     };
-  }, [open, onClose]);
+  }, [open]);
 
   if (!open) return null;
 
@@ -210,22 +216,95 @@ export function Field({
   label,
   children,
   hint,
+  error,
   optional,
   htmlFor,
   className = '',
 }) {
+  const control = isValidElement(children)
+    ? cloneElement(children, {
+        className: [children.props.className, error ? 'input-invalid' : '']
+          .filter(Boolean)
+          .join(' '),
+        'aria-invalid': error ? true : children.props['aria-invalid'],
+      })
+    : children;
+
   return (
-    <div className={`ui-field ${className}`}>
+    <div className={`ui-field ${error ? 'has-error' : ''} ${className}`}>
       {label ? (
         <label className="label" htmlFor={htmlFor}>
           <span>{label}</span>
           {optional ? <span className="ui-field-optional">optional</span> : null}
         </label>
       ) : null}
-      {children}
-      {hint ? <p className="ui-field-hint">{hint}</p> : null}
+      {control}
+      {error ? <p className="ui-field-error" role="alert">{error}</p> : hint ? (
+        <p className="ui-field-hint">{hint}</p>
+      ) : null}
     </div>
   );
+}
+
+export function SubmitButton({
+  loading,
+  children,
+  loadingText = 'Saving…',
+  className = 'btn-primary hero-cta-shine w-full !py-3',
+  type = 'submit',
+  disabled,
+  ...props
+}) {
+  return (
+    <button
+      type={type}
+      className={`${className} inline-flex items-center justify-center gap-2`}
+      disabled={!!loading || !!disabled}
+      aria-busy={loading || undefined}
+      {...props}
+    >
+      {loading ? (
+        <>
+          <span className="login-btn-spinner" aria-hidden />
+          {loadingText}
+        </>
+      ) : (
+        children
+      )}
+    </button>
+  );
+}
+
+/** Prevents double-submit. `run` no-ops if a request is already in flight. */
+export function useBusy() {
+  const [busy, setBusy] = useState(false);
+  const lock = useRef(false);
+
+  async function run(fn) {
+    if (lock.current) return { skipped: true };
+    lock.current = true;
+    setBusy(true);
+    try {
+      return await fn();
+    } finally {
+      lock.current = false;
+      setBusy(false);
+    }
+  }
+
+  return [busy, run];
+}
+
+export function requiredFields(spec) {
+  const errors = {};
+  for (const [key, [value, message]] of Object.entries(spec)) {
+    if (value == null || String(value).trim() === '') errors[key] = message;
+  }
+  return errors;
+}
+
+export function isEmail(value) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(value || '').trim());
 }
 
 /** Two-column field grid inside modals */
@@ -255,13 +334,17 @@ export function statusTone(s) {
   })[s] || 'gray';
 }
 
+const ERROR_RE = /fail|error|invalid|required|already|choose|select|could not|unable|missing|denied|unauthorized|not found|fix the/i;
+
 export function useToast() {
-  const [msg, setMsg] = useState(null);
-  const show = (m, t = 3000) => { setMsg(m); setTimeout(() => setMsg(null), t); };
-  const node = msg ? (
-    <div className="fixed bottom-4 right-4 z-50 bg-ink text-cream text-sm font-semibold px-4 py-2.5 rounded-xl shadow-lg no-print max-w-sm">
-      {msg}
-    </div>
-  ) : null;
-  return { show, node };
+  const show = (m) => {
+    if (m == null || m === '') return;
+    const text = String(m);
+    if (ERROR_RE.test(text)) toast.error(text);
+    else toast.success(text);
+  };
+  show.success = (m) => { if (m) toast.success(String(m)); };
+  show.error = (m) => { if (m) toast.error(String(m)); };
+  show.info = (m) => { if (m) toast(String(m)); };
+  return { show, node: null };
 }

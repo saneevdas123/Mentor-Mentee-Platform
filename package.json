@@ -25,7 +25,8 @@
     "nodemailer": "^6.9.14",
     "pdf-parse": "^1.1.1",
     "react": "^19.2.8",
-    "react-dom": "^19.2.8"
+    "react-dom": "^19.2.8",
+    "sonner": "^2.0.8"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.19",

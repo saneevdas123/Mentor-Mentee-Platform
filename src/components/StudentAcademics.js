@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Card, Field, Badge, Modal, statusTone } from '@/components/ui';
+import { Card, Field, Badge, Modal, statusTone, useBusy, SubmitButton, requiredFields } from '@/components/ui';
 import CreditTracker from '@/components/CreditTracker';
 
 export default function StudentAcademics({ student, show }) {
@@ -10,7 +10,8 @@ export default function StudentAcademics({ student, show }) {
   const [counsel, setCounsel] = useState([]);
   const [branch, setBranch] = useState([]);
   const [upload, setUpload] = useState({ file: null, semester: '', title: '' });
-  const [busy, setBusy] = useState(false);
+  const [errors, setErrors] = useState({});
+  const [busy, run] = useBusy();
   const [showBranch, setShowBranch] = useState(false);
   const [branchForm, setBranchForm] = useState({ requestedProgramme: '', reason: '' });
 
@@ -35,21 +36,29 @@ export default function StudentAcademics({ student, show }) {
 
   async function doUpload(e) {
     e.preventDefault();
-    if (!upload.file) return show('Choose a PDF');
-    setBusy(true);
-    const fd = new FormData();
-    fd.append('file', upload.file);
-    fd.append('studentId', sid);
-    if (upload.semester) fd.append('semester', upload.semester);
-    if (upload.title) fd.append('title', upload.title);
-    if (requests[0]) fd.append('requestId', requests[0]._id);
-    const res = await fetch('/api/gradesheets', { method: 'POST', body: fd });
-    const d = await res.json();
-    setBusy(false);
-    if (!res.ok) return show(d.error || 'Upload failed');
-    setUpload({ file: null, semester: '', title: '' });
-    show(d.warning ? 'Uploaded — some rows need mentor review' : 'Gradesheet uploaded & parsed');
-    load();
+    if (!upload.file) {
+      setErrors({ file: 'Choose a PDF gradesheet' });
+      show.error('Choose a PDF gradesheet');
+      return;
+    }
+    setErrors({});
+    await run(async () => {
+      const fd = new FormData();
+      fd.append('file', upload.file);
+      fd.append('studentId', sid);
+      if (upload.semester) fd.append('semester', upload.semester);
+      if (upload.title) fd.append('title', upload.title);
+      if (requests[0]) fd.append('requestId', requests[0]._id);
+      const res = await fetch('/api/gradesheets', { method: 'POST', body: fd });
+      const d = await res.json();
+      if (!res.ok) {
+        show.error(d.error || 'Upload failed');
+        return;
+      }
+      setUpload({ file: null, semester: '', title: '' });
+      show.success(d.warning ? 'Uploaded — some rows need mentor review' : 'Gradesheet uploaded & parsed');
+      load();
+    });
   }
 
   async function acknowledge(id) {
@@ -64,17 +73,31 @@ export default function StudentAcademics({ student, show }) {
 
   async function submitBranch(e) {
     e.preventDefault();
-    const res = await fetch('/api/branch-change', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(branchForm),
+    const next = requiredFields({
+      requestedProgramme: [branchForm.requestedProgramme, 'Enter the programme you want'],
     });
-    const d = await res.json();
-    if (!res.ok) return show(d.error || 'Failed');
-    setShowBranch(false);
-    setBranchForm({ requestedProgramme: '', reason: '' });
-    show('Branch-change request submitted');
-    load();
+    setErrors(next);
+    if (Object.keys(next).length) {
+      show.error('Please fill in the required fields');
+      return;
+    }
+    await run(async () => {
+      const res = await fetch('/api/branch-change', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(branchForm),
+      });
+      const d = await res.json();
+      if (!res.ok) {
+        show.error(d.error || 'Could not submit the request');
+        return;
+      }
+      setShowBranch(false);
+      setBranchForm({ requestedProgramme: '', reason: '' });
+      setErrors({});
+      show.success('Branch-change request submitted');
+      load();
+    });
   }
 
   async function withdrawBranch(id) {
@@ -115,16 +138,18 @@ export default function StudentAcademics({ student, show }) {
       </Card>
 
       <Card title="Gradesheets">
-        <form onSubmit={doUpload} className="ui-nest-muted p-3.5 mb-4 space-y-3">
+        <form onSubmit={doUpload} className="ui-nest-muted p-3.5 mb-4 space-y-3" noValidate>
           <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
             <div className="sm:col-span-2">
-              <label className="label">PDF file</label>
-              <input
-                className="input"
-                type="file"
-                accept="application/pdf"
-                onChange={(e) => setUpload({ ...upload, file: e.target.files[0] })}
-              />
+              <Field label="PDF file" error={errors.file}>
+                <input
+                  className="input"
+                  type="file"
+                  accept="application/pdf"
+                  onChange={(e) => { setUpload({ ...upload, file: e.target.files[0] }); setErrors((p) => ({ ...p, file: undefined })); }}
+                  disabled={busy}
+                />
+              </Field>
             </div>
             <Field label="Semester (optional)">
               <input
@@ -135,11 +160,12 @@ export default function StudentAcademics({ student, show }) {
                 placeholder="e.g. 3"
                 value={upload.semester}
                 onChange={(e) => setUpload({ ...upload, semester: e.target.value })}
+                disabled={busy}
               />
             </Field>
-            <button type="submit" className="btn-primary w-full" disabled={busy}>
-              {busy ? 'Uploading…' : 'Upload & parse'}
-            </button>
+            <SubmitButton loading={busy} loadingText="Uploading…" className="btn-primary w-full">
+              Upload & parse
+            </SubmitButton>
           </div>
           <p className="text-xs text-ink/50 leading-relaxed">
             Use a text-based PDF (not a photo scan). Courses map to CBCS baskets; your mentor verifies before credits count.
@@ -300,13 +326,13 @@ export default function StudentAcademics({ student, show }) {
         title="Request Branch Change"
         description="Your mentor will counsel you before the HoD/Dean takes a decision."
       >
-        <form onSubmit={submitBranch} className="ui-form-stack">
-          <Field label="Requested programme / branch">
+        <form onSubmit={submitBranch} className="ui-form-stack" noValidate>
+          <Field label="Requested programme / branch" error={errors.requestedProgramme}>
             <input
               className="input"
-              required
               value={branchForm.requestedProgramme}
-              onChange={(e) => setBranchForm({ ...branchForm, requestedProgramme: e.target.value })}
+              onChange={(e) => { setBranchForm({ ...branchForm, requestedProgramme: e.target.value }); setErrors((p) => ({ ...p, requestedProgramme: undefined })); }}
+              disabled={busy}
             />
           </Field>
           <Field label="Reason">
@@ -315,11 +341,12 @@ export default function StudentAcademics({ student, show }) {
               rows={3}
               value={branchForm.reason}
               onChange={(e) => setBranchForm({ ...branchForm, reason: e.target.value })}
+              disabled={busy}
             />
           </Field>
           <div className="flex gap-2 pt-1">
-            <button type="submit" className="btn-primary flex-1">Submit request</button>
-            <button type="button" className="btn-ghost" onClick={() => setShowBranch(false)}>Cancel</button>
+            <SubmitButton loading={busy} loadingText="Submitting…" className="btn-primary flex-1">Submit request</SubmitButton>
+            <button type="button" className="btn-ghost" onClick={() => setShowBranch(false)} disabled={busy}>Cancel</button>
           </div>
         </form>
       </Modal>

@@ -6,12 +6,33 @@ import Meeting from '@/models/Meeting';
 import Minutes from '@/models/Minutes';
 
 function median(nums) {
-  const a = nums.filter((n) => typeof n === 'number' && !isNaN(n)).sort((x, y) => x - y);
+  const a = nums.filter((n) => typeof n === 'number' && !Number.isNaN(n)).sort((x, y) => x - y);
   if (!a.length) return 0;
   const mid = Math.floor(a.length / 2);
-  return a.length % 2 ? a[mid] : (a[mid - 1] + a[mid]) / 2;
+  const raw = a.length % 2 ? a[mid] : (a[mid - 1] + a[mid]) / 2;
+  return +raw.toFixed(2);
 }
 const pct = (n, d) => (d ? +((n / d) * 100).toFixed(2) : 0);
+
+const CONFIRMED = new Set(['ACCEPTED', 'JOINED']);
+
+function hasOutcome(student, type) {
+  return (student.placements || []).some((p) => p.type === type && CONFIRMED.has(p.status || 'OFFERED'));
+}
+
+function placedCtc(student) {
+  const ctcs = (student.placements || [])
+    .filter((p) => p.type === 'PLACEMENT' && CONFIRMED.has(p.status || 'OFFERED') && typeof p.ctcLPA === 'number')
+    .map((p) => p.ctcLPA);
+  return ctcs.length ? Math.max(...ctcs) : null;
+}
+
+function attainmentValue(row, key) {
+  if (typeof row?.[key] === 'number') return row[key];
+  if (typeof row?.attained === 'number') return row.attained;
+  if (typeof row?.level === 'number') return row.level;
+  return null;
+}
 
 // Build a scope filter from optional school/department ids.
 function scope({ school, department }) {
@@ -32,16 +53,20 @@ export async function naacReport(filter = {}) {
   const mentorFilter = { role: 'MENTOR', isActive: true, ...sFilter };
   const mentors = await User.countDocuments(mentorFilter);
   const students = await StudentProfile.countDocuments(sFilter);
-  const mappedStudents = await Mapping.countDocuments({ active: true, ...sFilter });
+  const mappedStudents = (await Mapping.distinct('student', { active: true, ...sFilter })).length;
 
-  const meetings = await Meeting.countDocuments(sFilter);
-  const parentMeetings = await Meeting.countDocuments({ type: 'MONTHLY_PARENT', ...sFilter });
+  const notCancelled = { status: { $ne: 'CANCELLED' }, ...sFilter };
+  const mentoringMeetings = await Meeting.countDocuments({
+    ...notCancelled,
+    type: { $in: ['WEEKLY_MENTORING', 'ADHOC'] },
+  });
+  const parentMeetings = await Meeting.countDocuments({ ...notCancelled, type: 'MONTHLY_PARENT' });
   const minutesCount = await Minutes.countDocuments(sFilter);
 
-  // Progression (Criterion 5).
+  // Progression (Criterion 5) — only accepted/joined outcomes count as placed.
   const all = await StudentProfile.find(sFilter).lean();
-  const placed = all.filter((s) => (s.placements || []).some((p) => p.type === 'PLACEMENT')).length;
-  const higherStudies = all.filter((s) => (s.placements || []).some((p) => p.type === 'HIGHER_STUDIES')).length;
+  const placed = all.filter((s) => hasOutcome(s, 'PLACEMENT')).length;
+  const higherStudies = all.filter((s) => hasOutcome(s, 'HIGHER_STUDIES')).length;
   const scholarshipHolders = all.filter((s) => (s.scholarships || []).length > 0).length;
   const withActivities = all.filter((s) => (s.activities || []).length > 0).length;
   const atRisk = all.filter((s) => s.riskLevel === 'HIGH').length;
@@ -53,7 +78,7 @@ export async function naacReport(filter = {}) {
     mappedStudents,
     unmapped: Math.max(students - mappedStudents, 0),
     coverage: pct(mappedStudents, students),
-    mentoringMeetings: meetings,
+    mentoringMeetings,
     parentMeetings,
     minutesRecorded: minutesCount,
     progression: {
@@ -76,19 +101,21 @@ export async function nirfReport(filter = {}) {
   const all = await StudentProfile.find(sFilter).lean();
   const total = all.length;
 
-  const placedStudents = all.filter((s) => (s.placements || []).some((p) => p.type === 'PLACEMENT'));
-  const higherStudies = all.filter((s) => (s.placements || []).some((p) => p.type === 'HIGHER_STUDIES'));
-  const entrepreneurs = all.filter((s) => (s.placements || []).some((p) => p.type === 'ENTREPRENEURSHIP'));
+  const placedStudents = all.filter((s) => hasOutcome(s, 'PLACEMENT'));
+  const higherStudies = all.filter((s) => hasOutcome(s, 'HIGHER_STUDIES'));
+  const entrepreneurs = all.filter((s) => hasOutcome(s, 'ENTREPRENEURSHIP'));
 
-  // Median salary across all placement offers (LPA).
-  const salaries = [];
-  all.forEach((s) => (s.placements || []).forEach((p) => { if (p.type === 'PLACEMENT' && p.ctcLPA) salaries.push(p.ctcLPA); }));
+  // One accepted CTC per placed student (NIRF GMS), not every offer.
+  const salaries = placedStudents.map(placedCtc).filter((n) => n != null);
 
-  const onTime = all.filter((s) => s.onTimeGraduation !== false).length;
   const withBacklogs = all.filter((s) => (s.liveBacklogs || 0) > 0).length;
+  const onTime = all.filter((s) => s.onTimeGraduation !== false && (s.liveBacklogs || 0) === 0).length;
 
-  // NIRF GPH = placed % + higher studies % + entrepreneurship %.
-  const gph = pct(placedStudents.length + higherStudies.length + entrepreneurs.length, total);
+  // Unique students in any confirmed outcome — do not double-count.
+  const gphCount = all.filter((s) => (
+    hasOutcome(s, 'PLACEMENT') || hasOutcome(s, 'HIGHER_STUDIES') || hasOutcome(s, 'ENTREPRENEURSHIP')
+  )).length;
+  const gph = pct(gphCount, total);
 
   return {
     totalStudents: total,
@@ -101,7 +128,10 @@ export async function nirfReport(filter = {}) {
     minSalaryLPA: salaries.length ? Math.min(...salaries) : 0,
     onTimeGraduationPercent: pct(onTime, total),
     studentsWithLiveBacklogs: withBacklogs,
-    recruiters: [...new Set(placedStudents.flatMap((s) => (s.placements || []).filter((p) => p.type === 'PLACEMENT').map((p) => p.company)).filter(Boolean))],
+    recruiters: [...new Set(placedStudents.flatMap((s) => (s.placements || [])
+      .filter((p) => p.type === 'PLACEMENT' && CONFIRMED.has(p.status || 'OFFERED'))
+      .map((p) => p.company || p.institution)
+      .filter(Boolean)))],
   };
 }
 
@@ -127,11 +157,13 @@ export async function nbaReport(filter = {}) {
     else bands['<6']++;
   });
 
-  // Attainment averages.
+  // Attainment averages — accept schema fields and older seed shapes (attained / level).
   let coSum = 0, coN = 0, poSum = 0, poN = 0;
   all.forEach((s) => (s.attainments || []).forEach((a) => {
-    if (typeof a.coAttainment === 'number') { coSum += a.coAttainment; coN++; }
-    if (typeof a.poAttainment === 'number') { poSum += a.poAttainment; poN++; }
+    const co = attainmentValue(a, 'coAttainment');
+    const po = attainmentValue(a, 'poAttainment');
+    if (co != null) { coSum += co; coN++; }
+    if (po != null) { poSum += po; poN++; }
   }));
 
   const atRisk = all.filter((s) => s.riskLevel === 'HIGH');

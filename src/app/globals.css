@@ -882,6 +882,23 @@ html.js-landing .reveal.is-in {
   line-height: 1.35;
   color: rgba(20, 20, 20, 0.5);
 }
+.ui-field-error {
+  margin-top: 0.35rem;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  font-weight: 600;
+  color: #c23a32;
+}
+.input-invalid,
+.ui-modal-panel .input.input-invalid,
+.input.input-invalid {
+  border-color: #e24b43 !important;
+  box-shadow: 0 0 0 3px rgba(226, 75, 67, 0.14) !important;
+}
+.sonner-cutm {
+  font-family: inherit !important;
+  font-weight: 600 !important;
+}
 .ui-field-grid {
   display: grid;
   gap: 0.85rem;

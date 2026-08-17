@@ -1,7 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
 import Shell from '@/components/Shell';
-import { Stat, Card, Modal, Field, FieldGrid, Badge, statusTone, useToast, PageHead, TabBar, Tab } from '@/components/ui';
+import {
+  Stat, Card, Modal, Field, FieldGrid, Badge, statusTone, useToast, useBusy,
+  SubmitButton, requiredFields, PageHead, TabBar, Tab,
+} from '@/components/ui';
 import ProfileEditor from '@/components/ProfileEditor';
 import StudentAcademics from '@/components/StudentAcademics';
 import { fetchJson } from '@/lib/fetchJson';
@@ -23,7 +26,15 @@ export default function StudentClient({ me }) {
   const [meetings, setMeetings] = useState([]);
   const [showIssue, setShowIssue] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
-  const { show, node } = useToast();
+  const [issueForm, setIssueForm] = useState({ subject: '', description: '', category: 'ACADEMIC', priority: 'MEDIUM' });
+  const [errors, setErrors] = useState({});
+  const [busy, run] = useBusy();
+  const { show } = useToast();
+
+  function setIssueField(key, value) {
+    setIssueForm((p) => ({ ...p, [key]: value }));
+    setErrors((p) => (p[key] ? { ...p, [key]: undefined } : p));
+  }
 
   async function load() {
     try {
@@ -46,21 +57,31 @@ export default function StudentClient({ me }) {
 
   async function raiseIssue(e) {
     e.preventDefault();
-    const fd = new FormData(e.target);
-    const { res, data } = await fetchJson('/api/issues', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        subject: fd.get('subject'),
-        description: fd.get('description'),
-        category: fd.get('category'),
-        priority: fd.get('priority'),
-      }),
+    const next = requiredFields({
+      subject: [issueForm.subject, 'Enter a short subject'],
+      description: [issueForm.description, 'Describe the issue so your mentor can help'],
     });
-    if (!res.ok) return show(data?.error || 'Failed');
-    setShowIssue(false);
-    show('Issue submitted to your mentor');
-    load();
+    setErrors(next);
+    if (Object.keys(next).length) {
+      show.error('Please fill in the required fields');
+      return;
+    }
+    await run(async () => {
+      const { res, data } = await fetchJson('/api/issues', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(issueForm),
+      });
+      if (!res.ok) {
+        show.error(data?.error || 'Could not submit the issue');
+        return;
+      }
+      setShowIssue(false);
+      setIssueForm({ subject: '', description: '', category: 'ACADEMIC', priority: 'MEDIUM' });
+      setErrors({});
+      show.success('Issue submitted to your mentor');
+      load();
+    });
   }
 
   const now = Date.now();
@@ -239,7 +260,7 @@ export default function StudentClient({ me }) {
           title="My issues"
           subtitle="Raise concerns for your mentor — they can reply here"
           actions={
-            <button type="button" className="btn-primary !py-2" onClick={() => setShowIssue(true)}>
+            <button type="button" className="btn-primary !py-2" onClick={() => { setShowIssue(true); setErrors({}); }}>
               Raise issue
             </button>
           }
@@ -344,13 +365,13 @@ export default function StudentClient({ me }) {
         title="Raise an Issue"
         description="Your mentor will see this and can reply from their dashboard."
       >
-        <form onSubmit={raiseIssue} className="ui-form-stack">
-          <Field label="Subject">
-            <input name="subject" className="input" required placeholder="Short summary of the issue" />
+        <form onSubmit={raiseIssue} className="ui-form-stack" noValidate>
+          <Field label="Subject" error={errors.subject}>
+            <input className="input" placeholder="Short summary of the issue" value={issueForm.subject} onChange={(e) => setIssueField('subject', e.target.value)} disabled={busy} />
           </Field>
           <FieldGrid>
             <Field label="Category">
-              <select name="category" className="input" defaultValue="ACADEMIC">
+              <select className="input" value={issueForm.category} onChange={(e) => setIssueField('category', e.target.value)} disabled={busy}>
                 <option value="ACADEMIC">Academic</option>
                 <option value="ATTENDANCE">Attendance</option>
                 <option value="PLACEMENT">Placement</option>
@@ -361,7 +382,7 @@ export default function StudentClient({ me }) {
               </select>
             </Field>
             <Field label="Priority">
-              <select name="priority" className="input" defaultValue="MEDIUM">
+              <select className="input" value={issueForm.priority} onChange={(e) => setIssueField('priority', e.target.value)} disabled={busy}>
                 <option value="LOW">Low</option>
                 <option value="MEDIUM">Medium</option>
                 <option value="HIGH">High</option>
@@ -369,10 +390,10 @@ export default function StudentClient({ me }) {
               </select>
             </Field>
           </FieldGrid>
-          <Field label="Description" hint="Share enough detail for your mentor to help.">
-            <textarea name="description" className="input" rows={4} required placeholder="What happened, and what do you need help with?" />
+          <Field label="Description" hint="Share enough detail for your mentor to help." error={errors.description}>
+            <textarea className="input" rows={4} placeholder="What happened, and what do you need help with?" value={issueForm.description} onChange={(e) => setIssueField('description', e.target.value)} disabled={busy} />
           </Field>
-          <button className="btn-primary hero-cta-shine w-full !py-3">Submit to mentor</button>
+          <SubmitButton loading={busy} loadingText="Submitting…">Submit to mentor</SubmitButton>
         </form>
       </Modal>
 
@@ -385,7 +406,6 @@ export default function StudentClient({ me }) {
       >
         {profile && <ProfileEditor student={profile} readOnly />}
       </Modal>
-      {node}
     </Shell>
   );
 }

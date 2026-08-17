@@ -1,12 +1,14 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Card, Field, Badge, statusTone } from '@/components/ui';
+import { Card, Field, Badge, statusTone, useBusy, SubmitButton, requiredFields } from '@/components/ui';
 
 /* ============ Basket manager (HoD) ============ */
 export function BasketManager({ show }) {
   const [baskets, setBaskets] = useState([]);
   const [form, setForm] = useState(blank());
   const [editingId, setEditingId] = useState(null);
+  const [errors, setErrors] = useState({});
+  const [busy, run] = useBusy();
 
   function blank() {
     return { name: '', code: '', defaultCredits: '', aliases: '', order: '', description: '' };
@@ -22,30 +24,44 @@ export function BasketManager({ show }) {
 
   async function save(e) {
     e.preventDefault();
-    const method = editingId ? 'PATCH' : 'POST';
-    const url = editingId ? `/api/baskets/${editingId}` : '/api/baskets';
-    const res = await fetch(url, {
-      method,
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+    const next = requiredFields({ name: [form.name, 'Enter a basket name'] });
+    setErrors(next);
+    if (Object.keys(next).length) {
+      show.error('Please fill in the required fields');
+      return;
+    }
+    await run(async () => {
+      const method = editingId ? 'PATCH' : 'POST';
+      const url = editingId ? `/api/baskets/${editingId}` : '/api/baskets';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      const d = await res.json();
+      if (!res.ok) {
+        show.error(d.error || 'Could not save the basket');
+        return;
+      }
+      setForm(blank());
+      setEditingId(null);
+      setErrors({});
+      show.success(editingId ? 'Basket updated' : 'Basket added');
+      load();
     });
-    const d = await res.json();
-    if (!res.ok) return show(d.error || 'Failed');
-    setForm(blank());
-    setEditingId(null);
-    show(editingId ? 'Basket updated' : 'Basket added');
-    load();
   }
 
   async function remove(id) {
     if (!confirm('Remove this basket? Historical records keep their labels.')) return;
-    await fetch(`/api/baskets/${id}`, { method: 'DELETE' });
-    if (editingId === id) {
-      setEditingId(null);
-      setForm(blank());
-    }
-    show('Basket removed');
-    load();
+    await run(async () => {
+      await fetch(`/api/baskets/${id}`, { method: 'DELETE' });
+      if (editingId === id) {
+        setEditingId(null);
+        setForm(blank());
+      }
+      show.success('Basket removed');
+      load();
+    });
   }
 
   function edit(b) {
@@ -159,6 +175,7 @@ export function BasketManager({ show }) {
         <form
           id="basket-form"
           onSubmit={save}
+          noValidate
           className="rounded-xl border border-ink/10 bg-white p-4 sm:p-5 space-y-3.5 shadow-sm"
         >
           <div className="flex items-start justify-between gap-2">
@@ -173,14 +190,14 @@ export function BasketManager({ show }) {
             {editingId ? <Badge tone="brand">Editing</Badge> : null}
           </div>
 
-          <Field label="Name *">
+          <Field label="Name *" error={errors.name}>
             <input
               className="input"
               placeholder="e.g. Program Core"
               value={form.name}
-              onChange={(e) => setForm({ ...form, name: e.target.value })}
-              required
+              onChange={(e) => { setForm({ ...form, name: e.target.value }); setErrors((p) => ({ ...p, name: undefined })); }}
               autoComplete="off"
+              disabled={busy}
             />
           </Field>
 
@@ -227,9 +244,13 @@ export function BasketManager({ show }) {
           </Field>
 
           <div className="flex gap-2 pt-1">
-            <button type="submit" className="btn-primary !py-2 !px-5 text-sm">
+            <SubmitButton
+              loading={busy}
+              loadingText={editingId ? 'Saving…' : 'Adding…'}
+              className="btn-primary !py-2 !px-5 text-sm"
+            >
               {editingId ? 'Save changes' : 'Add basket'}
-            </button>
+            </SubmitButton>
             {editingId ? (
               <button type="button" className="btn-ghost !py-2 text-sm" onClick={cancelEdit}>
                 Cancel
@@ -248,6 +269,7 @@ export function CreditPlanEditor({ student, onClose, show }) {
   const [lines, setLines] = useState([]);
   const [meta, setMeta] = useState({ creditsPerSemester: 20, expectedSemesters: 8 });
   const [loaded, setLoaded] = useState(false);
+  const [busy, run] = useBusy();
 
   useEffect(() => {
     (async () => {
@@ -283,23 +305,28 @@ export function CreditPlanEditor({ student, onClose, show }) {
   const setLine = (i, v) => setLines((p) => p.map((l, x) => (x === i ? { ...l, requiredCredits: v } : l)));
 
   async function save() {
-    const res = await fetch(`/api/credit-plan/${student._id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        lines: lines.map((l) => ({
-          basket: l.basket,
-          basketName: l.basketName,
-          requiredCredits: Number(l.requiredCredits) || 0,
-        })),
-        totalRequired: total,
-        ...meta,
-      }),
+    await run(async () => {
+      const res = await fetch(`/api/credit-plan/${student._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          lines: lines.map((l) => ({
+            basket: l.basket,
+            basketName: l.basketName,
+            requiredCredits: Number(l.requiredCredits) || 0,
+          })),
+          totalRequired: total,
+          ...meta,
+        }),
+      });
+      const d = await res.json();
+      if (!res.ok) {
+        show.error(d.error || 'Could not save the credit plan');
+        return;
+      }
+      show.success('Credit plan saved');
+      onClose();
     });
-    const d = await res.json();
-    if (!res.ok) return show(d.error || 'Failed');
-    show('Credit plan saved');
-    onClose();
   }
 
   if (!loaded) {
@@ -361,9 +388,9 @@ export function CreditPlanEditor({ student, onClose, show }) {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2 pt-1">
-        <button type="button" className="btn-primary flex-1 !py-2.5" onClick={save} disabled={!lines.length}>
+        <SubmitButton type="button" loading={busy} loadingText="Saving plan…" className="btn-primary flex-1 !py-2.5" onClick={save} disabled={!lines.length}>
           Save plan
-        </button>
+        </SubmitButton>
         <button type="button" className="btn-ghost !py-2.5" onClick={onClose}>Cancel</button>
       </div>
     </div>
@@ -374,6 +401,8 @@ export function CreditPlanEditor({ student, onClose, show }) {
 export function BranchDecisions({ show }) {
   const [requests, setRequests] = useState([]);
   const [remarks, setRemarks] = useState({});
+  const [busy, run] = useBusy();
+  const [actingId, setActingId] = useState(null);
 
   async function load() {
     const d = await fetch('/api/branch-change').then((r) => r.json());
@@ -382,15 +411,22 @@ export function BranchDecisions({ show }) {
   useEffect(() => { load(); }, []);
 
   async function decide(id, decision) {
-    const res = await fetch(`/api/branch-change/${id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'decide', decision, decisionRemarks: remarks[id] || '' }),
+    setActingId(id);
+    await run(async () => {
+      const res = await fetch(`/api/branch-change/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'decide', decision, decisionRemarks: remarks[id] || '' }),
+      });
+      const d = await res.json();
+      if (!res.ok) {
+        show.error(d.error || 'Could not save the decision');
+        return;
+      }
+      show.success(decision === 'APPROVED' ? 'Request approved' : 'Request rejected');
+      load();
     });
-    const d = await res.json();
-    if (!res.ok) return show(d.error || 'Failed');
-    show(`Request ${decision.toLowerCase()}`);
-    load();
+    setActingId(null);
   }
 
   const pending = requests.filter((r) => ['RECOMMENDED', 'NOT_RECOMMENDED'].includes(r.status));
@@ -437,10 +473,16 @@ export function BranchDecisions({ show }) {
                 onChange={(e) => setRemarks({ ...remarks, [r._id]: e.target.value })}
               />
               <div className="flex flex-wrap gap-2 mt-2">
-                <button type="button" className="btn-primary !py-2" onClick={() => decide(r._id, 'APPROVED')}>
+                <SubmitButton
+                  type="button"
+                  loading={busy && actingId === r._id}
+                  loadingText="Saving…"
+                  className="btn-primary !py-2"
+                  onClick={() => decide(r._id, 'APPROVED')}
+                >
                   Approve
-                </button>
-                <button type="button" className="btn-ghost !py-2" onClick={() => decide(r._id, 'REJECTED')}>
+                </SubmitButton>
+                <button type="button" className="btn-ghost !py-2" disabled={busy} onClick={() => decide(r._id, 'REJECTED')}>
                   Reject
                 </button>
               </div>
@@ -496,6 +538,7 @@ function Section({ title, children }) {
 export function LearnerCriteriaEditor({ show }) {
   const [c, setC] = useState(null);
   const [saved, setSaved] = useState(false);
+  const [busy, run] = useBusy();
 
   async function load() {
     const d = await fetch('/api/learner-criteria').then((r) => r.json());
@@ -509,15 +552,20 @@ export function LearnerCriteriaEditor({ show }) {
   }
 
   async function save() {
-    const res = await fetch('/api/learner-criteria', {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(c),
+    await run(async () => {
+      const res = await fetch('/api/learner-criteria', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(c),
+      });
+      const d = await res.json();
+      if (!res.ok) {
+        show.error(d.error || 'Could not save the learner policy');
+        return;
+      }
+      setSaved(true);
+      show.success('Learner policy saved');
     });
-    const d = await res.json();
-    if (!res.ok) return show(d.error || 'Failed');
-    setSaved(true);
-    show('Learner policy saved');
   }
 
   if (!c) {
@@ -611,7 +659,9 @@ export function LearnerCriteriaEditor({ show }) {
       </div>
 
       <div className="flex flex-wrap items-center gap-3 mt-5 pt-4 border-t border-ink/8">
-        <button type="button" className="btn-primary !py-2.5" onClick={save}>Save policy</button>
+        <SubmitButton type="button" loading={busy} loadingText="Saving policy…" className="btn-primary !py-2.5" onClick={save}>
+          Save policy
+        </SubmitButton>
         {saved && <span className="text-sm font-medium text-ink/55">Saved</span>}
       </div>
     </Card>

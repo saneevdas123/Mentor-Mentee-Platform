@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import Shell from '@/components/Shell';
 import {
   Stat, Card, Modal, Field, FieldGrid, Badge, riskTone, statusTone,
-  useToast, PageHead, TabBar, Tab,
+  useToast, useBusy, SubmitButton, requiredFields, PageHead, TabBar, Tab,
 } from '@/components/ui';
 import ProfileEditor from '@/components/ProfileEditor';
 import MenteeWorkspace from '@/components/MenteeWorkspace';
@@ -36,7 +36,9 @@ export default function MentorClient({ me }) {
   const [meetForm, setMeetForm] = useState({ type: 'WEEKLY_MENTORING', durationMins: 45 });
   const [viewMin, setViewMin] = useState(null);
   const [respondIssue, setRespondIssue] = useState(null);
-  const { show, node } = useToast();
+  const [errors, setErrors] = useState({});
+  const [busy, run] = useBusy();
+  const { show } = useToast();
 
   async function load() {
     try {
@@ -62,59 +64,96 @@ export default function MentorClient({ me }) {
   useEffect(() => { load(); }, []);
 
   async function saveProfile(payload) {
-    const res = await fetch(`/api/students/${editing._id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+    return run(async () => {
+      const res = await fetch(`/api/students/${editing._id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        show.error(data.error || 'Could not update the profile');
+        return;
+      }
+      setEditing(null);
+      show.success('Profile updated');
+      load();
     });
-    const data = await res.json();
-    if (!res.ok) return show(data.error || 'Failed');
-    setEditing(null);
-    show('Profile updated');
-    load();
   }
 
   async function scheduleMeeting(e) {
     e.preventDefault();
-    const res = await fetch('/api/meetings', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(meetForm),
+    const next = requiredFields({
+      title: [meetForm.title, 'Enter a meeting title'],
+      scheduledAt: [meetForm.scheduledAt, 'Choose a date and time'],
     });
-    const data = await res.json();
-    if (!res.ok) return show(data.error || 'Failed');
-    setShowMeet(false);
-    setMeetForm({ type: 'WEEKLY_MENTORING', durationMins: 45 });
-    show('Meeting scheduled & invites sent');
-    load();
+    setErrors(next);
+    if (Object.keys(next).length) {
+      show.error('Please fill in the required fields');
+      return;
+    }
+    await run(async () => {
+      const res = await fetch('/api/meetings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(meetForm),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        show.error(data.error || 'Could not schedule the meeting');
+        return;
+      }
+      setShowMeet(false);
+      setMeetForm({ type: 'WEEKLY_MENTORING', durationMins: 45 });
+      setErrors({});
+      show.success('Meeting scheduled — invites sent');
+      load();
+    });
   }
 
   async function saveMinutes(payload) {
-    const res = await fetch(`/api/minutes/${viewMin._id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+    await run(async () => {
+      const res = await fetch(`/api/minutes/${viewMin._id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        show.error(data.error || 'Could not save minutes');
+        return;
+      }
+      setViewMin(data.minutes);
+      show.success(payload.finalize ? 'Minutes finalized' : 'Minutes saved');
+      load();
     });
-    const data = await res.json();
-    if (!res.ok) return show(data.error || 'Failed');
-    setViewMin(data.minutes);
-    show(payload.finalize ? 'Minutes finalized' : 'Minutes saved');
-    load();
   }
 
   async function respond(e) {
     e.preventDefault();
     const fd = new FormData(e.target);
-    const res = await fetch(`/api/issues/${respondIssue._id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: fd.get('message'), status: fd.get('status') }),
+    const message = fd.get('message');
+    if (!String(message || '').trim()) {
+      setErrors({ message: 'Write a response for the student' });
+      show.error('Write a response before sending');
+      return;
+    }
+    setErrors({});
+    await run(async () => {
+      const res = await fetch(`/api/issues/${respondIssue._id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message, status: fd.get('status') }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        show.error(data.error || 'Could not send the response');
+        return;
+      }
+      setRespondIssue(null);
+      show.success('Response sent');
+      load();
     });
-    const data = await res.json();
-    if (!res.ok) return show(data.error || 'Failed');
-    setRespondIssue(null);
-    show('Response sent');
-    load();
   }
 
   const highRisk = students.filter((s) => s.riskLevel === 'HIGH').length;
@@ -428,14 +467,14 @@ export default function MentorClient({ me }) {
         title="Schedule meeting"
         description="Creates a Meet link, emails invites, and drafts the minutes."
       >
-        <form onSubmit={scheduleMeeting} className="ui-form-stack">
-          <Field label="Title">
+        <form onSubmit={scheduleMeeting} className="ui-form-stack" noValidate>
+          <Field label="Title" error={errors.title}>
             <input
               className="input"
-              required
               placeholder="Weekly mentoring — CSE batch"
               value={meetForm.title || ''}
-              onChange={(e) => setMeetForm({ ...meetForm, title: e.target.value })}
+              onChange={(e) => { setMeetForm({ ...meetForm, title: e.target.value }); setErrors((p) => ({ ...p, title: undefined })); }}
+              disabled={busy}
             />
           </Field>
           <FieldGrid>
@@ -444,18 +483,20 @@ export default function MentorClient({ me }) {
                 className="input"
                 value={meetForm.type}
                 onChange={(e) => setMeetForm({ ...meetForm, type: e.target.value })}
+                disabled={busy}
               >
                 <option value="WEEKLY_MENTORING">Weekly mentoring (mentees)</option>
                 <option value="MONTHLY_PARENT">Monthly parent meeting</option>
                 <option value="ADHOC">Ad-hoc</option>
               </select>
             </Field>
-            <Field label="Date & time">
+            <Field label="Date & time" error={errors.scheduledAt}>
               <input
                 className="input"
                 type="datetime-local"
-                required
-                onChange={(e) => setMeetForm({ ...meetForm, scheduledAt: e.target.value })}
+                value={meetForm.scheduledAt || ''}
+                onChange={(e) => { setMeetForm({ ...meetForm, scheduledAt: e.target.value }); setErrors((p) => ({ ...p, scheduledAt: undefined })); }}
+                disabled={busy}
               />
             </Field>
           </FieldGrid>
@@ -466,11 +507,10 @@ export default function MentorClient({ me }) {
               placeholder="What will you cover in this session?"
               value={meetForm.agenda || ''}
               onChange={(e) => setMeetForm({ ...meetForm, agenda: e.target.value })}
+              disabled={busy}
             />
           </Field>
-          <button type="submit" className="btn-primary hero-cta-shine w-full !py-3">
-            Schedule & notify
-          </button>
+          <SubmitButton loading={busy} loadingText="Scheduling…">Schedule & notify</SubmitButton>
         </form>
       </Modal>
 
@@ -481,7 +521,7 @@ export default function MentorClient({ me }) {
         description="Capture discussion so IQAC has a clean record later."
         wide
       >
-        {viewMin && <MinutesEditor m={viewMin} onSave={saveMinutes} />}
+        {viewMin && <MinutesEditor m={viewMin} onSave={saveMinutes} saving={busy} />}
       </Modal>
 
       <Modal
@@ -515,18 +555,19 @@ export default function MentorClient({ me }) {
               </div>
             )}
 
-            <form onSubmit={respond} className="ui-form-stack">
-              <Field label="Your response">
+            <form onSubmit={respond} className="ui-form-stack" noValidate>
+              <Field label="Your response" error={errors.message}>
                 <textarea
                   name="message"
                   className="input"
                   rows={3}
-                  required
                   placeholder="What did you advise or decide?"
+                  disabled={busy}
+                  onChange={() => setErrors((p) => ({ ...p, message: undefined }))}
                 />
               </Field>
               <Field label="Status">
-                <select name="status" className="input" defaultValue={respondIssue.status}>
+                <select name="status" className="input" defaultValue={respondIssue.status} disabled={busy}>
                   <option value="OPEN">Open</option>
                   <option value="IN_PROGRESS">In progress</option>
                   <option value="RESOLVED">Resolved</option>
@@ -534,19 +575,16 @@ export default function MentorClient({ me }) {
                   <option value="CLOSED">Closed</option>
                 </select>
               </Field>
-              <button type="submit" className="btn-primary hero-cta-shine w-full !py-3">
-                Send response
-              </button>
+              <SubmitButton loading={busy} loadingText="Sending…">Send response</SubmitButton>
             </form>
           </div>
         )}
       </Modal>
-      {node}
     </Shell>
   );
 }
 
-function MinutesEditor({ m, onSave }) {
+function MinutesEditor({ m, onSave, saving }) {
   const [f, setF] = useState({ ...m, actionItems: m.actionItems || [], attendees: m.attendees || [] });
   const set = (k, v) => setF((p) => ({ ...p, [k]: v }));
   const presentCount = f.attendees.filter((a) => a.present).length;
@@ -624,11 +662,17 @@ function MinutesEditor({ m, onSave }) {
       </Field>
 
       <div className="flex flex-col sm:flex-row gap-2 pt-1">
-        <button type="button" className="btn-primary hero-cta-shine flex-1 !py-2.5" onClick={() => onSave(f)}>
+        <SubmitButton
+          type="button"
+          loading={saving}
+          loadingText="Saving…"
+          className="btn-primary hero-cta-shine flex-1 !py-2.5"
+          onClick={() => onSave(f)}
+        >
           Save draft
-        </button>
+        </SubmitButton>
         {!f.finalized && (
-          <button type="button" className="btn-ghost !py-2.5" onClick={() => onSave({ ...f, finalize: true })}>
+          <button type="button" className="btn-ghost !py-2.5" disabled={saving} onClick={() => onSave({ ...f, finalize: true })}>
             Finalize
           </button>
         )}

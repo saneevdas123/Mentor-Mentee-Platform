@@ -2,7 +2,8 @@
 import { useEffect, useState } from 'react';
 import Shell from '@/components/Shell';
 import {
-  Stat, Card, Modal, Field, FieldGrid, Badge, riskTone, useToast, PageHead, TabBar, Tab,
+  Stat, Card, Modal, Field, FieldGrid, Badge, riskTone, useToast, useBusy, SubmitButton,
+  requiredFields, isEmail, PageHead, TabBar, Tab,
 } from '@/components/ui';
 import { BasketManager, CreditPlanEditor, BranchDecisions, LearnerCriteriaEditor } from '@/components/AcademicSetup';
 import { NaacReportPanel, NirfReportPanel, NbaReportPanel } from '@/components/ReportPanels';
@@ -39,7 +40,14 @@ export default function HodClient({ me }) {
   const [mapStudents, setMapStudents] = useState([]);
   const [mapFilter, setMapFilter] = useState('all'); // all | unmapped
   const [planStudent, setPlanStudent] = useState(null);
-  const { show, node } = useToast();
+  const [errors, setErrors] = useState({});
+  const [busy, run] = useBusy();
+  const { show } = useToast();
+
+  function setField(key, value) {
+    setForm((p) => ({ ...p, [key]: value }));
+    setErrors((p) => (p[key] ? { ...p, [key]: undefined } : p));
+  }
 
   async function load() {
     try {
@@ -60,65 +68,120 @@ export default function HodClient({ me }) {
 
   async function createMentor(e) {
     e.preventDefault();
-    const res = await fetch('/api/users', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ ...form, role: 'MENTOR' }),
+    const next = requiredFields({
+      name: [form.name, 'Enter the mentor’s full name'],
+      email: [form.email, 'Enter an email address'],
     });
-    const data = await res.json();
-    if (!res.ok) return show(data.error || 'Failed');
-    setShowMentor(false);
-    setForm({});
-    setCreds(data.tempPassword ? { email: data.user.email, pass: data.tempPassword } : null);
-    show('Mentor provisioned');
-    load();
+    if (form.email && !isEmail(form.email)) next.email = 'Enter a valid email address';
+    setErrors(next);
+    if (Object.keys(next).length) {
+      show.error('Please fill in the required fields');
+      return;
+    }
+    await run(async () => {
+      const res = await fetch('/api/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...form, role: 'MENTOR' }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        show.error(data.error || 'Could not provision the mentor');
+        return;
+      }
+      setShowMentor(false);
+      setForm({});
+      setErrors({});
+      setCreds(data.tempPassword ? { email: data.user.email, pass: data.tempPassword } : null);
+      show.success('Mentor provisioned — save the temporary password');
+      load();
+    });
   }
 
   async function createStudent(e) {
     e.preventDefault();
-    const res = await fetch('/api/students', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form),
+    const next = requiredFields({
+      registrationNo: [form.registrationNo, 'Enter the registration number'],
+      name: [form.name, 'Enter the student’s full name'],
     });
-    const data = await res.json();
-    if (!res.ok) return show(data.error || 'Failed');
-    setShowStudent(false);
-    setForm({});
-    show('Student added');
-    load();
+    if (form.email && !isEmail(form.email)) next.email = 'Enter a valid email address';
+    setErrors(next);
+    if (Object.keys(next).length) {
+      show.error('Please fill in the required fields');
+      return;
+    }
+    await run(async () => {
+      const res = await fetch('/api/students', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(form),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        show.error(data.error || 'Could not add the student');
+        return;
+      }
+      setShowStudent(false);
+      setForm({});
+      setErrors({});
+      show.success('Student added');
+      load();
+    });
   }
 
   async function doImport(e) {
     e.preventDefault();
-    if (!file) return show('Choose a file');
-    const fd = new FormData();
-    fd.append('file', file);
-    fd.append('issueCredentials', String(issueCreds));
-    const res = await fetch('/api/students/import', { method: 'POST', body: fd });
-    const data = await res.json();
-    if (!res.ok) return show(data.error || 'Import failed');
-    setImportResult(data.summary);
-    show('Import complete');
-    load();
+    if (!file) {
+      setErrors({ file: 'Choose an Excel (.xlsx) file' });
+      show.error('Choose an Excel file to import');
+      return;
+    }
+    setErrors({});
+    await run(async () => {
+      const fd = new FormData();
+      fd.append('file', file);
+      fd.append('issueCredentials', String(issueCreds));
+      const res = await fetch('/api/students/import', { method: 'POST', body: fd });
+      const data = await res.json();
+      if (!res.ok) {
+        show.error(data.error || 'Import failed');
+        return;
+      }
+      setImportResult(data.summary);
+      show.success('Import complete');
+      load();
+    });
   }
 
   async function doMap(e) {
     e.preventDefault();
-    if (!mapMentor || !mapStudents.length) return show('Select a mentor and students');
-    const res = await fetch('/api/mapping', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ mentorId: mapMentor, studentIds: mapStudents }),
+    const next = {};
+    if (!mapMentor) next.mentor = 'Choose a mentor';
+    if (!mapStudents.length) next.students = 'Select at least one student';
+    setErrors(next);
+    if (Object.keys(next).length) {
+      show.error('Select a mentor and at least one student');
+      return;
+    }
+    await run(async () => {
+      const res = await fetch('/api/mapping', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ mentorId: mapMentor, studentIds: mapStudents }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        show.error(data.error || 'Could not map students');
+        return;
+      }
+      setShowMap(false);
+      setMapMentor('');
+      setMapStudents([]);
+      setMapFilter('all');
+      setErrors({});
+      show.success(`Mapped ${data.mapped} student${data.mapped === 1 ? '' : 's'}`);
+      load();
     });
-    const data = await res.json();
-    if (!res.ok) return show(data.error || 'Failed');
-    setShowMap(false);
-    setMapMentor('');
-    setMapStudents([]);
-    setMapFilter('all');
-    show(`Mapped ${data.mapped} students`);
-    load();
   }
 
   const mappedIds = new Set(mappings.map((m) => m.student?._id));
@@ -168,7 +231,7 @@ export default function HodClient({ me }) {
               title="Faculty mentors"
               subtitle="Provision faculty and track mentee load"
               actions={(
-                <button type="button" className="btn-primary !py-2" onClick={() => { setShowMentor(true); setCreds(null); setForm({}); }}>
+                <button type="button" className="btn-primary !py-2" onClick={() => { setShowMentor(true); setCreds(null); setForm({}); setErrors({}); }}>
                   Add mentor
                 </button>
               )}
@@ -230,7 +293,7 @@ export default function HodClient({ me }) {
                   >
                     Import
                   </button>
-                  <button type="button" className="btn-primary !py-1.5 !px-3 text-xs" onClick={() => { setShowStudent(true); setForm({}); }}>
+                  <button type="button" className="btn-primary !py-1.5 !px-3 text-xs" onClick={() => { setShowStudent(true); setForm({}); setErrors({}); }}>
                     Add student
                   </button>
                 </div>
@@ -435,24 +498,22 @@ export default function HodClient({ me }) {
             </button>
           </div>
         ) : (
-          <form onSubmit={createMentor} className="ui-form-stack">
-            <Field label="Full name">
-              <input className="input" required placeholder="Prof. C. Mentor" onChange={(e) => setForm({ ...form, name: e.target.value })} />
+          <form onSubmit={createMentor} className="ui-form-stack" noValidate>
+            <Field label="Full name" error={errors.name}>
+              <input className="input" placeholder="Prof. C. Mentor" value={form.name || ''} onChange={(e) => setField('name', e.target.value)} disabled={busy} />
             </Field>
-            <Field label="Email">
-              <input className="input" type="email" required placeholder="mentor@cutm.ac.in" onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            <Field label="Email" error={errors.email}>
+              <input className="input" type="email" placeholder="mentor@cutm.ac.in" value={form.email || ''} onChange={(e) => setField('email', e.target.value)} disabled={busy} />
             </Field>
             <FieldGrid>
               <Field label="Employee ID" optional>
-                <input className="input" placeholder="EMP-3010" onChange={(e) => setForm({ ...form, employeeId: e.target.value })} />
+                <input className="input" placeholder="EMP-3010" value={form.employeeId || ''} onChange={(e) => setField('employeeId', e.target.value)} disabled={busy} />
               </Field>
               <Field label="Designation" optional>
-                <input className="input" placeholder="Assistant Professor" onChange={(e) => setForm({ ...form, designation: e.target.value })} />
+                <input className="input" placeholder="Assistant Professor" value={form.designation || ''} onChange={(e) => setField('designation', e.target.value)} disabled={busy} />
               </Field>
             </FieldGrid>
-            <button type="submit" className="btn-primary hero-cta-shine w-full !py-3">
-              Create & email credentials
-            </button>
+            <SubmitButton loading={busy} loadingText="Creating mentor…">Create & email credentials</SubmitButton>
           </form>
         )}
       </Modal>
@@ -464,43 +525,43 @@ export default function HodClient({ me }) {
         description="Required fields first — you can enrich the profile later."
         wide
       >
-        <form onSubmit={createStudent} className="ui-form-stack">
+        <form onSubmit={createStudent} className="ui-form-stack" noValidate>
           <FieldGrid>
-            <Field label="Registration No">
-              <input className="input" required placeholder="210301120001" onChange={(e) => setForm({ ...form, registrationNo: e.target.value })} />
+            <Field label="Registration No" error={errors.registrationNo}>
+              <input className="input" placeholder="210301120001" value={form.registrationNo || ''} onChange={(e) => setField('registrationNo', e.target.value)} disabled={busy} />
             </Field>
             <Field label="Roll No" optional>
-              <input className="input" placeholder="CSE-21-001" onChange={(e) => setForm({ ...form, rollNo: e.target.value })} />
+              <input className="input" placeholder="CSE-21-001" value={form.rollNo || ''} onChange={(e) => setField('rollNo', e.target.value)} disabled={busy} />
             </Field>
-            <Field label="Full name">
-              <input className="input" required placeholder="Student name" onChange={(e) => setForm({ ...form, name: e.target.value })} />
+            <Field label="Full name" error={errors.name}>
+              <input className="input" placeholder="Student name" value={form.name || ''} onChange={(e) => setField('name', e.target.value)} disabled={busy} />
             </Field>
-            <Field label="Email" optional>
-              <input className="input" type="email" placeholder="student@cutm.ac.in" onChange={(e) => setForm({ ...form, email: e.target.value })} />
+            <Field label="Email" optional error={errors.email}>
+              <input className="input" type="email" placeholder="student@cutm.ac.in" value={form.email || ''} onChange={(e) => setField('email', e.target.value)} disabled={busy} />
             </Field>
             <Field label="Programme" optional>
-              <input className="input" placeholder="B.Tech CSE" onChange={(e) => setForm({ ...form, programme: e.target.value })} />
+              <input className="input" placeholder="B.Tech CSE" value={form.programme || ''} onChange={(e) => setField('programme', e.target.value)} disabled={busy} />
             </Field>
             <Field label="Batch" optional>
-              <input className="input" placeholder="2022-2026" onChange={(e) => setForm({ ...form, batch: e.target.value })} />
+              <input className="input" placeholder="2022-2026" value={form.batch || ''} onChange={(e) => setField('batch', e.target.value)} disabled={busy} />
             </Field>
             <Field label="Current semester" optional>
-              <input className="input" type="number" min="1" placeholder="3" onChange={(e) => setForm({ ...form, currentSemester: Number(e.target.value) })} />
+              <input className="input" type="number" min="1" placeholder="3" value={form.currentSemester || ''} onChange={(e) => setField('currentSemester', Number(e.target.value))} disabled={busy} />
             </Field>
             <Field label="Category" optional>
-              <select className="input" defaultValue="" onChange={(e) => setForm({ ...form, category: e.target.value })}>
+              <select className="input" value={form.category || ''} onChange={(e) => setField('category', e.target.value)} disabled={busy}>
                 <option value="" disabled>Choose category…</option>
                 <option>GEN</option><option>OBC</option><option>SC</option><option>ST</option><option>EWS</option>
               </select>
             </Field>
             <Field label="Parent email" optional>
-              <input className="input" type="email" placeholder="parent@email.com" onChange={(e) => setForm({ ...form, parentEmail: e.target.value })} />
+              <input className="input" type="email" placeholder="parent@email.com" value={form.parentEmail || ''} onChange={(e) => setField('parentEmail', e.target.value)} disabled={busy} />
             </Field>
             <Field label="Parent phone" optional>
-              <input className="input" placeholder="98765 43210" onChange={(e) => setForm({ ...form, parentPhone: e.target.value })} />
+              <input className="input" placeholder="98765 43210" value={form.parentPhone || ''} onChange={(e) => setField('parentPhone', e.target.value)} disabled={busy} />
             </Field>
           </FieldGrid>
-          <button type="submit" className="btn-primary hero-cta-shine w-full !py-3">Add student</button>
+          <SubmitButton loading={busy} loadingText="Adding student…">Add student</SubmitButton>
         </form>
       </Modal>
 
@@ -511,12 +572,12 @@ export default function HodClient({ me }) {
         description="Download the template, fill it, then upload. Mentors match by MentorEmail."
       >
         {!importResult ? (
-          <form onSubmit={doImport} className="ui-form-stack">
+          <form onSubmit={doImport} className="ui-form-stack" noValidate>
             <a className="btn-ghost w-full justify-center" href="/api/students/template">
               Download template
             </a>
-            <Field label="Excel file (.xlsx)" hint="Use the template columns for a clean import.">
-              <input className="input" type="file" accept=".xlsx" required onChange={(e) => setFile(e.target.files[0])} />
+            <Field label="Excel file (.xlsx)" hint="Use the template columns for a clean import." error={errors.file}>
+              <input className="input" type="file" accept=".xlsx" onChange={(e) => { setFile(e.target.files[0]); setErrors((p) => ({ ...p, file: undefined })); }} disabled={busy} />
             </Field>
             <label className="flex items-start gap-2.5 text-sm leading-snug ui-nest p-3 cursor-pointer">
               <input
@@ -524,10 +585,11 @@ export default function HodClient({ me }) {
                 className="mt-0.5"
                 checked={issueCreds}
                 onChange={(e) => setIssueCreds(e.target.checked)}
+                disabled={busy}
               />
               <span>Issue login credentials to students (emails them)</span>
             </label>
-            <button type="submit" className="btn-primary hero-cta-shine w-full !py-3">Upload & import</button>
+            <SubmitButton loading={busy} loadingText="Importing…">Upload & import</SubmitButton>
           </form>
         ) : (
           <div className="ui-form-stack text-sm">
@@ -563,9 +625,9 @@ export default function HodClient({ me }) {
         description="Pick one mentor, then tick mentees to assign."
         wide
       >
-        <form onSubmit={doMap} className="ui-form-stack">
-          <Field label="Mentor">
-            <select className="input" value={mapMentor} onChange={(e) => setMapMentor(e.target.value)} required>
+        <form onSubmit={doMap} className="ui-form-stack" noValidate>
+          <Field label="Mentor" error={errors.mentor}>
+            <select className="input" value={mapMentor} onChange={(e) => { setMapMentor(e.target.value); setErrors((p) => ({ ...p, mentor: undefined })); }} disabled={busy}>
               <option value="" disabled hidden>Choose a mentor…</option>
               {mentors.map((m) => (
                 <option key={m._id} value={m._id}>
@@ -626,12 +688,12 @@ export default function HodClient({ me }) {
               )}
             </div>
           </div>
-          <button type="submit" className="btn-primary hero-cta-shine w-full !py-3" disabled={!mapStudents.length}>
+          {errors.students ? <p className="ui-field-error" role="alert">{errors.students}</p> : null}
+          <SubmitButton loading={busy} loadingText="Mapping…" disabled={!mapStudents.length && !errors.students}>
             Map {mapStudents.length || ''} selected
-          </button>
+          </SubmitButton>
         </form>
       </Modal>
-      {node}
     </Shell>
   );
 }

@@ -11,6 +11,15 @@ function LoadingCard() {
   );
 }
 
+function ErrorCard({ message }) {
+  return (
+    <div className="card bg-white p-10 text-center text-sm">
+      <p className="font-semibold text-ink">Could not load this report</p>
+      <p className="text-ink/55 mt-1">{message || 'Try again, or check that you are signed in as Admin, Dean, or HoD.'}</p>
+    </div>
+  );
+}
+
 function PreviewCard({ children }) {
   return (
     <div className="card bg-white overflow-hidden">
@@ -22,6 +31,7 @@ function PreviewCard({ children }) {
 export function NaacReportPanel({ embedded = false }) {
   const [r, setR] = useState(null);
   const [list, setList] = useState([]);
+  const [err, setErr] = useState(null);
 
   useEffect(() => {
     let alive = true;
@@ -30,12 +40,19 @@ export function NaacReportPanel({ embedded = false }) {
       fetch('/api/reports/mentor-list').then((x) => x.json()),
     ]).then(([naac, mentors]) => {
       if (!alive) return;
-      setR(naac.report || null);
+      if (naac.error || !naac.report) {
+        setErr(naac.error || 'NAAC report returned no data');
+        return;
+      }
+      setR(naac.report);
       setList(mentors.list || []);
+    }).catch(() => {
+      if (alive) setErr('Network error while loading the NAAC report');
     });
     return () => { alive = false; };
   }, []);
 
+  if (err) return <ErrorCard message={err} />;
   if (!r) return <LoadingCard />;
 
   return (
@@ -53,6 +70,7 @@ export function NaacReportPanel({ embedded = false }) {
           <Row label="Total number of Faculty Mentors" value={r.mentors} />
           <Row label="Total number of Students (Mentees)" value={r.students} />
           <Row label="Students mapped to a mentor" value={r.mappedStudents} />
+          <Row label="Students not yet mapped" value={r.unmapped ?? Math.max((r.students || 0) - (r.mappedStudents || 0), 0)} />
           <Row label="Mentor : Mentee Ratio" value={r.ratio} highlight />
           <Row label="Mapping coverage" value={`${r.coverage}%`} />
         </tbody>
@@ -71,10 +89,10 @@ export function NaacReportPanel({ embedded = false }) {
       <h3 className="font-bold text-ink mb-2">C. Student Progression & Support (Criterion 5)</h3>
       <table className="w-full border-collapse mb-6">
         <tbody>
-          <Row label="Students placed (%)" value={`${r.progression.placedPercent}%`} />
-          <Row label="Students progressing to higher studies (%)" value={`${r.progression.higherStudiesPercent}%`} />
-          <Row label="Students availing scholarships/freeships (%)" value={`${r.progression.scholarshipPercent}%`} />
-          <Row label="Students participating in activities (%)" value={`${r.progression.participationPercent}%`} />
+          <Row label="Students placed (%)" value={`${r.progression?.placedPercent ?? 0}%`} />
+          <Row label="Students progressing to higher studies (%)" value={`${r.progression?.higherStudiesPercent ?? 0}%`} />
+          <Row label="Students availing scholarships/freeships (%)" value={`${r.progression?.scholarshipPercent ?? 0}%`} />
+          <Row label="Students participating in activities (%)" value={`${r.progression?.participationPercent ?? 0}%`} />
         </tbody>
       </table>
 
@@ -112,15 +130,22 @@ export function NaacReportPanel({ embedded = false }) {
 
 export function NirfReportPanel({ embedded = false }) {
   const [r, setR] = useState(null);
+  const [err, setErr] = useState(null);
 
   useEffect(() => {
     let alive = true;
     fetch('/api/reports/nirf')
       .then((x) => x.json())
-      .then((d) => { if (alive) setR(d.report || null); });
+      .then((d) => {
+        if (!alive) return;
+        if (d.error || !d.report) setErr(d.error || 'NIRF report returned no data');
+        else setR(d.report);
+      })
+      .catch(() => { if (alive) setErr('Network error while loading the NIRF report'); });
     return () => { alive = false; };
   }, []);
 
+  if (err) return <ErrorCard message={err} />;
   if (!r) return <LoadingCard />;
 
   return (
@@ -177,15 +202,22 @@ export function NirfReportPanel({ embedded = false }) {
 
 export function NbaReportPanel({ embedded = false }) {
   const [r, setR] = useState(null);
+  const [err, setErr] = useState(null);
 
   useEffect(() => {
     let alive = true;
     fetch('/api/reports/nba')
       .then((x) => x.json())
-      .then((d) => { if (alive) setR(d.report || null); });
+      .then((d) => {
+        if (!alive) return;
+        if (d.error || !d.report) setErr(d.error || 'NBA report returned no data');
+        else setR(d.report);
+      })
+      .catch(() => { if (alive) setErr('Network error while loading the NBA report'); });
     return () => { alive = false; };
   }, []);
 
+  if (err) return <ErrorCard message={err} />;
   if (!r) return <LoadingCard />;
 
   const b = r.cgpaDistribution || {};

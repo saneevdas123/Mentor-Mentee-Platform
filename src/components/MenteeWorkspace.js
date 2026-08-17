@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { Field, Badge, Modal, TabBar, Tab, statusTone, useToast } from '@/components/ui';
+import { Field, Badge, Modal, TabBar, Tab, statusTone, useToast, useBusy, SubmitButton, requiredFields } from '@/components/ui';
 import CreditTracker from '@/components/CreditTracker';
 
 const KINDS = ['CREDIT_COUNSELLING', 'ACADEMIC', 'CAREER', 'PERSONAL', 'GENERAL'];
@@ -12,7 +12,8 @@ export default function MenteeWorkspace({ student, onClose }) {
   const [counsel, setCounsel] = useState([]);
   const [branch, setBranch] = useState([]);
   const [reviewGs, setReviewGs] = useState(null);
-  const { show, node } = useToast();
+  const [busy, run] = useBusy();
+  const { show } = useToast();
 
   async function load() {
     const [c, cn, br] = await Promise.all([
@@ -32,32 +33,42 @@ export default function MenteeWorkspace({ student, onClose }) {
   const needsReview = gradesheets.filter((g) => g.status === 'NEEDS_REVIEW').length;
 
   async function requestGradesheet() {
-    const res = await fetch('/api/counselling', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        student: student._id,
-        kind: 'GRADESHEET_REQUEST',
-        subject: 'Please upload your latest gradesheet',
-        summary: 'Mentor requested the latest semester gradesheet for credit review.',
-      }),
+    await run(async () => {
+      const res = await fetch('/api/counselling', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          student: student._id,
+          kind: 'GRADESHEET_REQUEST',
+          subject: 'Please upload your latest gradesheet',
+          summary: 'Mentor requested the latest semester gradesheet for credit review.',
+        }),
+      });
+      if (!res.ok) {
+        show.error('Could not send the gradesheet request');
+        return;
+      }
+      show.success('Gradesheet request sent to the student');
+      load();
     });
-    if (!res.ok) return show('Could not send request');
-    show('Gradesheet request sent to student');
-    load();
   }
 
   async function verifyGs(gs, remaps) {
-    const res = await fetch(`/api/gradesheets/${gs._id}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ remaps, status: 'VERIFIED' }),
+    await run(async () => {
+      const res = await fetch(`/api/gradesheets/${gs._id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ remaps, status: 'VERIFIED' }),
+      });
+      const d = await res.json();
+      if (!res.ok) {
+        show.error(d.error || 'Could not verify the gradesheet');
+        return;
+      }
+      setReviewGs(null);
+      show.success('Gradesheet verified — credits updated');
+      load();
     });
-    const d = await res.json();
-    if (!res.ok) return show(d.error || 'Failed');
-    setReviewGs(null);
-    show('Gradesheet verified — credits updated');
-    load();
   }
 
   return (
@@ -92,8 +103,8 @@ export default function MenteeWorkspace({ student, onClose }) {
           <LearningLevel student={student} learner={data.learner} onSaved={load} show={show} />
           <div className="flex flex-wrap items-center justify-between gap-2">
             <p className="text-xs text-ink/50">Progress uses verified gradesheets only.</p>
-            <button type="button" className="btn-ghost !py-1.5 !px-3 text-xs" onClick={requestGradesheet}>
-              Ask for gradesheet
+            <button type="button" className="btn-ghost !py-1.5 !px-3 text-xs" onClick={requestGradesheet} disabled={busy}>
+              {busy ? 'Sending…' : 'Ask for gradesheet'}
             </button>
           </div>
           <CreditTracker progress={data.progress} />
@@ -125,9 +136,9 @@ export default function MenteeWorkspace({ student, onClose }) {
           baskets={baskets}
           onClose={() => setReviewGs(null)}
           onVerify={verifyGs}
+          saving={busy}
         />
       )}
-      {node}
     </div>
   );
 }
@@ -181,7 +192,7 @@ function GradesheetList({ gradesheets, onReview, onAsk }) {
   );
 }
 
-function GradesheetReview({ gs, baskets, onClose, onVerify }) {
+function GradesheetReview({ gs, baskets, onClose, onVerify, saving }) {
   const [lines, setLines] = useState(
     (gs.parsedLines || []).map((l) => ({ ...l, basket: l.basket ? String(l.basket) : '' }))
   );
@@ -202,15 +213,17 @@ function GradesheetReview({ gs, baskets, onClose, onVerify }) {
           <span className="text-xs text-ink/55 mr-auto self-center">
             {unmapped ? `${unmapped} course(s) still need a basket` : 'All courses mapped'}
           </span>
-          <button type="button" className="btn-ghost" onClick={onClose}>Cancel</button>
-          <button
+          <button type="button" className="btn-ghost" onClick={onClose} disabled={saving}>Cancel</button>
+          <SubmitButton
             type="button"
             className="btn-primary"
+            loading={saving}
+            loadingText="Verifying…"
             onClick={() => onVerify(gs, remaps)}
             disabled={!!unmapped}
           >
             Verify & apply credits
-          </button>
+          </SubmitButton>
         </>
       )}
     >
@@ -278,7 +291,12 @@ function CounsellingPanel({ studentId, baskets, records, recommendations, onSave
     advice: '',
     recommendations: [],
   });
-  const set = (k, v) => setForm((p) => ({ ...p, [k]: v }));
+  const [errors, setErrors] = useState({});
+  const [busy, run] = useBusy();
+  const set = (k, v) => {
+    setForm((p) => ({ ...p, [k]: v }));
+    setErrors((p) => (p[k] ? { ...p, [k]: undefined } : p));
+  };
 
   function prefillFromTracker() {
     const recs = (recommendations || []).map((r) => ({
@@ -297,33 +315,45 @@ function CounsellingPanel({ studentId, baskets, records, recommendations, onSave
 
   async function save(e) {
     e.preventDefault();
-    const payload = {
-      ...form,
-      student: studentId,
-      recommendations: form.recommendations.filter((r) => r.basket || r.suggestedCourses || r.credits),
-    };
-    const res = await fetch('/api/counselling', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
+    const next = requiredFields({ subject: [form.subject, 'Enter a subject for this session'] });
+    setErrors(next);
+    if (Object.keys(next).length) {
+      show.error('Please fill in the required fields');
+      return;
+    }
+    await run(async () => {
+      const payload = {
+        ...form,
+        student: studentId,
+        recommendations: form.recommendations.filter((r) => r.basket || r.suggestedCourses || r.credits),
+      };
+      const res = await fetch('/api/counselling', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      const d = await res.json();
+      if (!res.ok) {
+        show.error(d.error || 'Could not save the counselling note');
+        return;
+      }
+      setForm({
+        kind: 'CREDIT_COUNSELLING',
+        mode: 'IN_PERSON',
+        subject: '',
+        summary: '',
+        advice: '',
+        recommendations: [],
+      });
+      setErrors({});
+      show.success('Counselling note recorded');
+      onSaved();
     });
-    const d = await res.json();
-    if (!res.ok) return show(d.error || 'Failed');
-    setForm({
-      kind: 'CREDIT_COUNSELLING',
-      mode: 'IN_PERSON',
-      subject: '',
-      summary: '',
-      advice: '',
-      recommendations: [],
-    });
-    show('Counselling note recorded');
-    onSaved();
   }
 
   return (
     <div className="grid lg:grid-cols-2 gap-5">
-      <form onSubmit={save} className="space-y-3 ui-nest-muted p-4">
+      <form onSubmit={save} className="space-y-3 ui-nest-muted p-4" noValidate>
         <div className="flex items-center justify-between gap-2">
           <div className="font-semibold text-ink text-sm">New session</div>
           <button type="button" className="text-xs font-semibold text-brand underline" onClick={prefillFromTracker}>
@@ -345,8 +375,8 @@ function CounsellingPanel({ studentId, baskets, records, recommendations, onSave
             </select>
           </Field>
         </div>
-        <Field label="Subject">
-          <input className="input" value={form.subject} onChange={(e) => set('subject', e.target.value)} required />
+        <Field label="Subject" error={errors.subject}>
+          <input className="input" value={form.subject} onChange={(e) => set('subject', e.target.value)} disabled={busy} />
         </Field>
         <Field label="What was discussed">
           <textarea className="input" rows={2} value={form.summary} onChange={(e) => set('summary', e.target.value)} />
@@ -401,7 +431,9 @@ function CounsellingPanel({ studentId, baskets, records, recommendations, onSave
             ))}
           </div>
         )}
-        <button type="submit" className="btn-primary w-full !py-2.5">Save counselling record</button>
+        <SubmitButton loading={busy} loadingText="Saving note…" className="btn-primary w-full !py-2.5">
+          Save counselling record
+        </SubmitButton>
       </form>
 
       <div>
@@ -448,19 +480,29 @@ function CounsellingPanel({ studentId, baskets, records, recommendations, onSave
 function BranchPanel({ student, firstYear, requests, onSaved, show }) {
   const [counselId, setCounselId] = useState(null);
   const [remarks, setRemarks] = useState('');
+  const [busy, run] = useBusy();
 
   async function counsel(reqId, recommends) {
-    const res = await fetch(`/api/branch-change/${reqId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'counsel', mentorRemarks: remarks, mentorRecommends: recommends }),
+    if (!String(remarks || '').trim()) {
+      show.error('Add counselling remarks before you submit');
+      return;
+    }
+    await run(async () => {
+      const res = await fetch(`/api/branch-change/${reqId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'counsel', mentorRemarks: remarks, mentorRecommends: recommends }),
+      });
+      const d = await res.json();
+      if (!res.ok) {
+        show.error(d.error || 'Could not record counselling');
+        return;
+      }
+      setCounselId(null);
+      setRemarks('');
+      show.success('Counselling recorded');
+      onSaved();
     });
-    const d = await res.json();
-    if (!res.ok) return show(d.error || 'Failed');
-    setCounselId(null);
-    setRemarks('');
-    show('Counselling recorded');
-    onSaved();
   }
 
   return (
@@ -505,10 +547,10 @@ function BranchPanel({ student, firstYear, requests, onSaved, show }) {
                   onChange={(e) => setRemarks(e.target.value)}
                 />
                 <div className="flex flex-wrap gap-2">
-                  <button type="button" className="btn-primary !py-2" onClick={() => counsel(r._id, true)}>
+                  <SubmitButton type="button" loading={busy} loadingText="Saving…" className="btn-primary !py-2" onClick={() => counsel(r._id, true)}>
                     Counsel & recommend
-                  </button>
-                  <button type="button" className="btn-ghost !py-2" onClick={() => counsel(r._id, false)}>
+                  </SubmitButton>
+                  <button type="button" className="btn-ghost !py-2" disabled={busy} onClick={() => counsel(r._id, false)}>
                     Counsel & don’t recommend
                   </button>
                   <button type="button" className="btn-ghost !py-2" onClick={() => { setCounselId(null); setRemarks(''); }}>
@@ -541,33 +583,44 @@ function LearningLevel({ student, learner, onSaved, show }) {
   const [editing, setEditing] = useState(false);
   const [cat, setCat] = useState(learner?.category || 'AVERAGE');
   const [reason, setReason] = useState('');
+  const [busy, run] = useBusy();
   const labels = { ADVANCED: 'Advanced', AVERAGE: 'Average', SLOW: 'Slow learner' };
   const badgeTone = { ADVANCED: 'blue', AVERAGE: 'gray', SLOW: 'amber' };
 
   async function saveOverride() {
-    const res = await fetch(`/api/students/${student._id}/learner`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ category: cat, reason }),
+    await run(async () => {
+      const res = await fetch(`/api/students/${student._id}/learner`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ category: cat, reason }),
+      });
+      const d = await res.json();
+      if (!res.ok) {
+        show.error(d.error || 'Could not update learner level');
+        return;
+      }
+      setEditing(false);
+      setReason('');
+      show.success('Learner level updated');
+      onSaved();
     });
-    const d = await res.json();
-    if (!res.ok) return show(d.error || 'Failed');
-    setEditing(false);
-    setReason('');
-    show('Learner level updated');
-    onSaved();
   }
 
   async function clearOverride() {
-    const res = await fetch(`/api/students/${student._id}/learner`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ clear: true }),
+    await run(async () => {
+      const res = await fetch(`/api/students/${student._id}/learner`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ clear: true }),
+      });
+      if (!res.ok) {
+        show.error('Could not revert learner level');
+        return;
+      }
+      setEditing(false);
+      show.success('Reverted to automatic');
+      onSaved();
     });
-    if (!res.ok) return show('Failed');
-    setEditing(false);
-    show('Reverted to automatic');
-    onSaved();
   }
 
   if (!learner) return null;
@@ -620,9 +673,9 @@ function LearningLevel({ student, learner, onSaved, show }) {
             onChange={(e) => setReason(e.target.value)}
           />
           <div className="flex flex-wrap gap-2">
-            <button type="button" className="btn-primary !py-1.5 !px-3 text-xs" onClick={saveOverride}>
+            <SubmitButton type="button" loading={busy} loadingText="Saving…" className="btn-primary !py-1.5 !px-3 text-xs" onClick={saveOverride}>
               Save override
-            </button>
+            </SubmitButton>
             <button type="button" className="btn-ghost !py-1.5 !px-3 text-xs" onClick={clearOverride}>
               Revert to automatic
             </button>
