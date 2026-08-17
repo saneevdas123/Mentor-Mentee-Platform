@@ -1,18 +1,43 @@
 'use client';
-import { useEffect, useState } from 'react';
-import { Card, Field, Badge, statusTone, useBusy, SubmitButton, requiredFields } from '@/components/ui';
+import { useEffect, useRef, useState } from 'react';
+import { toast } from 'sonner';
+import {
+  Card, Field, Badge, Modal, ConfirmDialog, statusTone, useBusy, SubmitButton, requiredFields,
+} from '@/components/ui';
+
+function blankBasket() {
+  return { name: '', code: '', defaultCredits: '', aliases: '', description: '' };
+}
+
+function moveBasket(list, fromId, toId) {
+  const next = [...list];
+  const from = next.findIndex((b) => String(b._id) === String(fromId));
+  const to = next.findIndex((b) => String(b._id) === String(toId));
+  if (from < 0 || to < 0 || from === to) return list;
+  const [item] = next.splice(from, 1);
+  next.splice(to, 0, item);
+  return next;
+}
+
+function sameOrder(a, b) {
+  return a.length === b.length && a.every((x, i) => String(x._id) === String(b[i]._id));
+}
 
 /* ============ Basket manager (HoD) ============ */
 export function BasketManager({ show }) {
   const [baskets, setBaskets] = useState([]);
-  const [form, setForm] = useState(blank());
+  const [form, setForm] = useState(blankBasket());
+  const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState(null);
+  const [removeId, setRemoveId] = useState(null);
   const [errors, setErrors] = useState({});
   const [busy, run] = useBusy();
+  const [dragId, setDragId] = useState(null);
+  const [savingOrder, setSavingOrder] = useState(false);
 
-  function blank() {
-    return { name: '', code: '', defaultCredits: '', aliases: '', order: '', description: '' };
-  }
+  const listRef = useRef([]);
+  const drag = useRef({ id: null, snapshot: null });
+  listRef.current = baskets;
 
   async function load() {
     const d = await fetch('/api/baskets').then((r) => r.json());
@@ -21,6 +46,33 @@ export function BasketManager({ show }) {
     setBaskets(list);
   }
   useEffect(() => { load(); }, []);
+
+  function openAdd() {
+    setEditingId(null);
+    setForm(blankBasket());
+    setErrors({});
+    setModalOpen(true);
+  }
+
+  function openEdit(b) {
+    setEditingId(b._id);
+    setForm({
+      name: b.name,
+      code: b.code || '',
+      defaultCredits: b.defaultCredits ?? '',
+      aliases: (b.aliases || []).join(', '),
+      description: b.description || '',
+    });
+    setErrors({});
+    setModalOpen(true);
+  }
+
+  function closeModal() {
+    setModalOpen(false);
+    setEditingId(null);
+    setForm(blankBasket());
+    setErrors({});
+  }
 
   async function save(e) {
     e.preventDefault();
@@ -43,81 +95,148 @@ export function BasketManager({ show }) {
         show.error(d.error || 'Could not save the basket');
         return;
       }
-      setForm(blank());
-      setEditingId(null);
-      setErrors({});
-      show.success(editingId ? 'Basket updated' : 'Basket added');
+      const wasEdit = !!editingId;
+      closeModal();
+      show.success(wasEdit ? 'Basket updated' : 'Basket added');
       load();
     });
   }
 
-  async function remove(id) {
-    if (!confirm('Remove this basket? Historical records keep their labels.')) return;
+  async function confirmRemove() {
+    const id = removeId;
+    if (!id) return;
     await run(async () => {
-      await fetch(`/api/baskets/${id}`, { method: 'DELETE' });
-      if (editingId === id) {
-        setEditingId(null);
-        setForm(blank());
+      const res = await fetch(`/api/baskets/${id}`, { method: 'DELETE' });
+      if (!res.ok) {
+        const d = await res.json().catch(() => ({}));
+        show.error(d.error || 'Could not remove the basket');
+        return;
       }
+      setRemoveId(null);
+      if (editingId === id) closeModal();
       show.success('Basket removed');
       load();
     });
   }
 
-  function edit(b) {
-    setEditingId(b._id);
-    setForm({
-      name: b.name,
-      code: b.code || '',
-      defaultCredits: b.defaultCredits ?? '',
-      aliases: (b.aliases || []).join(', '),
-      order: b.order ?? '',
-      description: b.description || '',
-    });
-    if (typeof window !== 'undefined') {
-      window.requestAnimationFrame(() => {
-        document.getElementById('basket-form')?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  async function persistOrder(next, previous) {
+    if (sameOrder(next, previous)) return;
+    setSavingOrder(true);
+    try {
+      const res = await fetch('/api/baskets/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ids: next.map((b) => b._id) }),
       });
+      const d = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(d.error || 'Could not save order');
+      setBaskets(next.map((b, i) => ({ ...b, order: i + 1 })));
+      toast.success('Order saved', {
+        action: {
+          label: 'Undo',
+          onClick: () => persistOrder(previous, next),
+        },
+      });
+    } catch (err) {
+      setBaskets(previous);
+      show.error(err.message || 'Order not saved — reverted');
+    } finally {
+      setSavingOrder(false);
     }
   }
 
-  function cancelEdit() {
-    setEditingId(null);
-    setForm(blank());
+  function onHandlePointerDown(e, id) {
+    if (e.button != null && e.button !== 0) return;
+    if (savingOrder || busy) return;
+    e.preventDefault();
+    drag.current = { id, snapshot: listRef.current };
+    setDragId(id);
+
+    const prevUserSelect = document.body.style.userSelect;
+    document.body.style.userSelect = 'none';
+
+    function onMove(ev) {
+      if (!drag.current.id) return;
+      const row = document.elementFromPoint(ev.clientX, ev.clientY)?.closest('[data-basket-id]');
+      const overId = row?.getAttribute('data-basket-id');
+      if (!overId || overId === drag.current.id) return;
+      setBaskets((prev) => moveBasket(prev, drag.current.id, overId));
+    }
+
+    function onUp() {
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onUp);
+      document.body.style.userSelect = prevUserSelect;
+      if (!drag.current.id) return;
+      const previous = drag.current.snapshot;
+      const next = listRef.current;
+      drag.current = { id: null, snapshot: null };
+      setDragId(null);
+      persistOrder(next, previous);
+    }
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onUp);
   }
 
+  const dragging = !!dragId;
+
   return (
-    <div className="grid lg:grid-cols-12 gap-5 lg:gap-6 items-start">
-      {/* List first — primary content */}
-      <section className="lg:col-span-7 order-2 lg:order-1">
-        <div className="flex items-end justify-between gap-3 mb-3">
-          <div>
-            <h2 className="font-bold text-ink text-base">Your baskets</h2>
-            <p className="text-xs text-ink/50 mt-0.5">
-              Used in credit plans, gradesheet mapping, and the student tracker
-            </p>
-          </div>
-          <span className="text-xs font-semibold tabular-nums text-ink/45 shrink-0">
+    <section>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-4">
+        <div>
+          <h2 className="font-bold text-ink text-base">Your baskets</h2>
+          <p className="text-xs text-ink/50 mt-0.5">
+            Drag the handle to change order. Used in credit plans, gradesheets, and the student tracker.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <span className="text-xs font-semibold tabular-nums text-ink/45">
             {baskets.length} total
           </span>
+          <button type="button" className="btn-primary !py-2 !px-4 text-sm" onClick={openAdd}>
+            + Add basket
+          </button>
         </div>
+      </div>
 
-        {baskets.length ? (
-          <ul className="space-y-2">
-            {baskets.map((b, idx) => (
+      {baskets.length ? (
+        <ul className={`space-y-2 ${dragging ? 'select-none' : ''}`}>
+          {baskets.map((b, idx) => {
+            const active = String(dragId) === String(b._id);
+            return (
               <li
                 key={b._id}
-                className={`rounded-xl border px-4 py-3.5 transition-colors ${
-                  editingId === b._id
-                    ? 'border-brand/40 bg-brand-light/40'
+                data-basket-id={b._id}
+                className={`rounded-xl border px-3 sm:px-4 py-3 transition-[box-shadow,transform,border-color,background-color] ${
+                  active
+                    ? 'border-ink bg-white shadow-hard scale-[1.01] z-10 relative'
                     : 'border-ink/10 bg-white hover:border-ink/20'
-                }`}
+                } ${savingOrder && !active ? 'opacity-70' : ''}`}
               >
-                <div className="flex items-start justify-between gap-3">
+                <div className="flex items-start gap-2.5">
+                  <button
+                    type="button"
+                    className="basket-drag mt-0.5 shrink-0"
+                    aria-label={`Reorder ${b.name}`}
+                    disabled={savingOrder || busy}
+                    onPointerDown={(e) => onHandlePointerDown(e, b._id)}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden>
+                      <circle cx="5" cy="4" r="1.15" />
+                      <circle cx="11" cy="4" r="1.15" />
+                      <circle cx="5" cy="8" r="1.15" />
+                      <circle cx="11" cy="8" r="1.15" />
+                      <circle cx="5" cy="12" r="1.15" />
+                      <circle cx="11" cy="12" r="1.15" />
+                    </svg>
+                  </button>
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-[11px] font-bold tabular-nums text-ink/30 w-5">
-                        {b.order != null && b.order !== '' ? b.order : idx + 1}
+                        {idx + 1}
                       </span>
                       <h3 className="font-semibold text-ink text-sm sm:text-base truncate">{b.name}</h3>
                       {b.code ? <Badge tone="gray">{b.code}</Badge> : null}
@@ -144,53 +263,45 @@ export function BasketManager({ show }) {
                     <button
                       type="button"
                       className="btn-ghost !py-1.5 !px-3 text-xs"
-                      onClick={() => edit(b)}
+                      onClick={() => openEdit(b)}
+                      disabled={dragging || savingOrder}
                     >
                       Edit
                     </button>
                     <button
                       type="button"
                       className="btn-ghost !py-1.5 !px-3 text-xs !text-brand-dark hover:!bg-brand-light"
-                      onClick={() => remove(b._id)}
+                      onClick={() => setRemoveId(b._id)}
+                      disabled={dragging || savingOrder}
                     >
                       Remove
                     </button>
                   </div>
                 </div>
               </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="rounded-xl border border-dashed border-ink/15 bg-white/60 px-5 py-10 text-center">
-            <p className="font-semibold text-ink text-sm">No baskets yet</p>
-            <p className="text-xs text-ink/50 mt-1 max-w-xs mx-auto leading-relaxed">
-              Add Foundation Core, Program Core, and electives so credit plans and gradesheets can map courses.
-            </p>
-          </div>
-        )}
-      </section>
+            );
+          })}
+        </ul>
+      ) : (
+        <div className="rounded-xl border border-dashed border-ink/15 bg-white/60 px-5 py-10 text-center">
+          <p className="font-semibold text-ink text-sm">No baskets yet</p>
+          <p className="text-xs text-ink/50 mt-1 max-w-xs mx-auto leading-relaxed">
+            Add Foundation Core, Program Core, and electives so credit plans and gradesheets can map courses.
+          </p>
+          <button type="button" className="btn-primary !py-2 !px-4 text-sm mt-4" onClick={openAdd}>
+            + Add basket
+          </button>
+        </div>
+      )}
 
-      {/* Compact form — secondary */}
-      <aside className="lg:col-span-5 order-1 lg:order-2 lg:sticky lg:top-20">
-        <form
-          id="basket-form"
-          onSubmit={save}
-          noValidate
-          className="rounded-xl border border-ink/10 bg-white p-4 sm:p-5 space-y-3.5 shadow-sm"
-        >
-          <div className="flex items-start justify-between gap-2">
-            <div>
-              <h2 className="font-bold text-ink text-base">
-                {editingId ? 'Edit basket' : 'Add basket'}
-              </h2>
-              <p className="text-xs text-ink/50 mt-0.5">
-                {editingId ? 'Update name, credits, or aliases' : 'Only name is required'}
-              </p>
-            </div>
-            {editingId ? <Badge tone="brand">Editing</Badge> : null}
-          </div>
-
-          <Field label="Name *" error={errors.name}>
+      <Modal
+        open={modalOpen}
+        onClose={busy ? () => {} : closeModal}
+        title={editingId ? 'Edit basket' : 'Add basket'}
+        description={editingId ? 'Update name, credits, or aliases.' : 'Only name is required. Order is set by dragging the list.'}
+      >
+        <form onSubmit={save} className="ui-form-stack" noValidate>
+          <Field label="Name" error={errors.name}>
             <input
               className="input"
               placeholder="e.g. Program Core"
@@ -200,18 +311,18 @@ export function BasketManager({ show }) {
               disabled={busy}
             />
           </Field>
-
-          <div className="grid grid-cols-3 gap-2.5">
-            <Field label="Code">
+          <div className="grid grid-cols-2 gap-2.5">
+            <Field label="Code" optional>
               <input
                 className="input"
                 placeholder="PC"
                 value={form.code}
                 onChange={(e) => setForm({ ...form, code: e.target.value })}
                 autoComplete="off"
+                disabled={busy}
               />
             </Field>
-            <Field label="Credits">
+            <Field label="Credits" optional>
               <input
                 className="input"
                 type="number"
@@ -219,47 +330,43 @@ export function BasketManager({ show }) {
                 placeholder="24"
                 value={form.defaultCredits}
                 onChange={(e) => setForm({ ...form, defaultCredits: e.target.value })}
-              />
-            </Field>
-            <Field label="Order">
-              <input
-                className="input"
-                type="number"
-                min="0"
-                placeholder="1"
-                value={form.order}
-                onChange={(e) => setForm({ ...form, order: e.target.value })}
+                disabled={busy}
               />
             </Field>
           </div>
-
-          <Field label="Aliases" hint="Comma-separated PDF labels, e.g. Core, Discipline Core">
+          <Field label="Aliases" optional hint="Comma-separated PDF labels, e.g. Core, Discipline Core">
             <input
               className="input"
               placeholder="Core, Discipline Core"
               value={form.aliases}
               onChange={(e) => setForm({ ...form, aliases: e.target.value })}
               autoComplete="off"
+              disabled={busy}
             />
           </Field>
-
-          <div className="flex gap-2 pt-1">
-            <SubmitButton
-              loading={busy}
-              loadingText={editingId ? 'Saving…' : 'Adding…'}
-              className="btn-primary !py-2 !px-5 text-sm"
-            >
-              {editingId ? 'Save changes' : 'Add basket'}
-            </SubmitButton>
-            {editingId ? (
-              <button type="button" className="btn-ghost !py-2 text-sm" onClick={cancelEdit}>
-                Cancel
-              </button>
-            ) : null}
-          </div>
+          <SubmitButton
+            loading={busy}
+            loadingText={editingId ? 'Saving…' : 'Adding…'}
+            className="btn-primary hero-cta-shine w-full !py-3"
+          >
+            {editingId ? 'Save changes' : 'Add basket'}
+          </SubmitButton>
         </form>
-      </aside>
-    </div>
+      </Modal>
+
+      <ConfirmDialog
+        open={!!removeId}
+        onClose={() => { if (!busy) setRemoveId(null); }}
+        title="Remove this basket?"
+        description="Credit plans and gradesheets keep their old labels. You can add the basket again later."
+        confirmLabel="Remove"
+        cancelLabel="Cancel"
+        danger
+        loading={busy}
+        loadingText="Removing…"
+        onConfirm={confirmRemove}
+      />
+    </section>
   );
 }
 

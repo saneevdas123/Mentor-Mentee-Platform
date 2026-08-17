@@ -184,9 +184,13 @@ export default function HodClient({ me }) {
     });
   }
 
+  const LEFT = ['DROPPED', 'DETAINED', 'ON_LEAVE'];
+  const activeMentors = mentors.filter((m) => m.isActive !== false);
+  const enrolled = students.filter((s) => !LEFT.includes(s.status));
   const mappedIds = new Set(mappings.map((m) => m.student?._id));
-  const unmapped = students.filter((s) => !mappedIds.has(s._id));
-  const ratio = mentors.length ? `1 : ${Math.round(students.length / mentors.length)}` : 'N/A';
+  const unmapped = enrolled.filter((s) => !mappedIds.has(s._id));
+  const ratio = activeMentors.length ? `1 : ${Math.round(enrolled.length / activeMentors.length)}` : 'N/A';
+  const dept = me.departmentName || 'your department';
 
   const mapListStudents = mapFilter === 'unmapped'
     ? students.filter((s) => !mappedIds.has(s._id))
@@ -206,13 +210,13 @@ export default function HodClient({ me }) {
           <PageHead
             eyebrow="Head of Department"
             title="Department Dashboard"
-            subtitle="Mentors, students, mapping, learner policy, and branch decisions — for your department."
+            subtitle={`Mentors, students, mapping, learner policy, and branch decisions — ${dept}.`}
           />
 
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-5">
-            <Stat label="Faculty Mentors" value={mentors.length} />
-            <Stat label="Students" value={students.length} tone="gray" />
-            <Stat label="Mentor : Mentee" value={ratio} tone="green" sub="NAAC 2.3.3" />
+            <Stat label="Faculty Mentors" value={activeMentors.length} />
+            <Stat label="Students" value={enrolled.length} tone="gray" />
+            <Stat label="Mentor : Mentee" value={ratio} tone="green" sub={`${enrolled.length} students · NAAC 2.3.3`} />
             <Stat label="Unmapped" value={unmapped.length} tone={unmapped.length ? 'amber' : 'green'} />
           </div>
 
@@ -441,7 +445,7 @@ export default function HodClient({ me }) {
           <PageHead
             eyebrow="Reports"
             title="NAAC Report"
-            subtitle="Preview mentoring metrics for NAAC. Print when you need a PDF."
+            subtitle={`Department preview for ${dept}. Print when you need a PDF.`}
           />
           <NaacReportPanel embedded />
         </>
@@ -452,7 +456,7 @@ export default function HodClient({ me }) {
           <PageHead
             eyebrow="Reports"
             title="NIRF Report"
-            subtitle="Preview graduation outcomes for NIRF. Print when you need a PDF."
+            subtitle={`Department graduation outcomes for ${dept}. Print when you need a PDF.`}
           />
           <NirfReportPanel embedded />
         </>
@@ -463,7 +467,7 @@ export default function HodClient({ me }) {
           <PageHead
             eyebrow="Reports"
             title="NBA Report"
-            subtitle="Preview OBE & mentoring metrics for NBA. Print when you need a PDF."
+            subtitle={`Department OBE & mentoring metrics for ${dept}. Print when you need a PDF.`}
           />
           <NbaReportPanel embedded />
         </>

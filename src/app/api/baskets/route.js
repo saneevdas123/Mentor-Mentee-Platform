@@ -26,13 +26,19 @@ export async function POST(req) {
   const b = await req.json();
   if (!b.name) return error('Basket name is required.');
   try {
+    const scope = {};
+    if (session.department) scope.department = session.department;
+    else if (session.school) scope.school = session.school;
+    const last = await Basket.findOne({ ...scope, isActive: true }).sort({ order: -1 }).select('order').lean();
+    const nextOrder = Number(b.order) > 0 ? Number(b.order) : (last?.order || 0) + 1;
+
     const basket = await Basket.create({
       name: b.name,
       code: b.code,
       description: b.description,
       aliases: Array.isArray(b.aliases) ? b.aliases : (b.aliases ? String(b.aliases).split(',').map((s) => s.trim()).filter(Boolean) : []),
       defaultCredits: Number(b.defaultCredits) || 0,
-      order: Number(b.order) || 0,
+      order: nextOrder,
       programme: b.programme || undefined,
       school: session.school,
       department: session.department,

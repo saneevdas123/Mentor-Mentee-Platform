@@ -1086,6 +1086,32 @@ html.js-landing .reveal.is-in {
   }
 }
 
+.basket-drag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.5rem;
+  color: rgba(20, 20, 20, 0.35);
+  cursor: grab;
+  touch-action: none;
+  border: 1px solid transparent;
+}
+.basket-drag:hover:not(:disabled) {
+  color: #141414;
+  background: #FDF8F0;
+  border-color: rgba(20, 20, 20, 0.1);
+}
+.basket-drag:active:not(:disabled),
+.basket-drag:disabled {
+  cursor: grabbing;
+}
+.basket-drag:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 /* Print styles for NAAC/NIRF/NBA reports */
 @media print {
   .no-print { display: none !important; }
