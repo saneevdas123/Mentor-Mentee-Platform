@@ -22,7 +22,7 @@ export const CAN_CREATE = {
   ADMIN: ['DEAN'],
   DEAN: ['HOD'],
   HOD: ['MENTOR', 'STUDENT'],
-  MENTOR: ['STUDENT'],
+  MENTOR: [],
   STUDENT: [],
 };
 

@@ -15,7 +15,6 @@ export async function POST(req) {
 
   const form = await req.formData();
   const file = form.get('file');
-  const issueCredentials = form.get('issueCredentials') === 'true';
   if (!file) return error('No file uploaded.');
   const buffer = Buffer.from(await file.arrayBuffer());
 
@@ -43,8 +42,9 @@ export async function POST(req) {
       if (student) { Object.assign(student, payload); await student.save(); summary.updated++; }
       else { student = await StudentProfile.create(payload); summary.created++; }
 
-      // Issue student login credentials.
-      if (issueCredentials && payload.email && !student.user) {
+      if (!payload.email) {
+        summary.errors.push({ row: i + 2, error: 'No email — login credentials were not sent' });
+      } else if (!student.user) {
         try {
           const { user } = await provisionUser({
             name: payload.name, email: payload.email, role: 'STUDENT',
@@ -52,7 +52,9 @@ export async function POST(req) {
           });
           student.user = user._id; await student.save();
           summary.credentialsIssued++;
-        } catch { /* email may already exist */ }
+        } catch {
+          summary.errors.push({ row: i + 2, error: `Could not email credentials for ${payload.email}` });
+        }
       }
 
       // Map to mentor by email.

@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import Shell from '@/components/Shell';
 import {
   Stat, Card, Modal, Field, FieldGrid, Badge, riskTone, statusTone,
-  useToast, useBusy, SubmitButton, requiredFields, isEmail, PageHead, TabBar, Tab,
+  useToast, useBusy, SubmitButton, requiredFields, PageHead, TabBar, Tab,
 } from '@/components/ui';
 import ProfileEditor from '@/components/ProfileEditor';
 import MenteeWorkspace from '@/components/MenteeWorkspace';
@@ -39,14 +39,6 @@ export default function MentorClient({ me }) {
   const [errors, setErrors] = useState({});
   const [busy, run] = useBusy();
   const { show } = useToast();
-  const [showStudent, setShowStudent] = useState(false);
-  const [studentForm, setStudentForm] = useState({});
-  const [studentCreds, setStudentCreds] = useState(null);
-
-  function setStudentField(key, value) {
-    setStudentForm((p) => ({ ...p, [key]: value }));
-    setErrors((p) => (p[key] ? { ...p, [key]: undefined } : p));
-  }
 
   async function load() {
     try {
@@ -70,43 +62,6 @@ export default function MentorClient({ me }) {
     }
   }
   useEffect(() => { load(); }, []);
-
-  async function createStudent(e) {
-    e.preventDefault();
-    const next = requiredFields({
-      registrationNo: [studentForm.registrationNo, 'Enter the registration number'],
-      name: [studentForm.name, 'Enter the student’s full name'],
-      email: [studentForm.email, 'Enter an email to send login credentials'],
-    });
-    if (studentForm.email && !isEmail(studentForm.email)) next.email = 'Enter a valid email address';
-    setErrors(next);
-    if (Object.keys(next).length) {
-      show.error('Please fill in the required fields');
-      return;
-    }
-    await run(async () => {
-      const res = await fetch('/api/students', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...studentForm, issueCredentials: true }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        show.error(data.error || 'Could not add the student');
-        return;
-      }
-      setStudentForm({});
-      setErrors({});
-      if (data.tempPassword) {
-        setStudentCreds({ email: data.student?.email || studentForm.email, pass: data.tempPassword });
-        show.success(data.credentialsEmailed ? 'Mentee added — credentials emailed' : 'Mentee added — save the temporary password');
-      } else {
-        setShowStudent(false);
-        show.success('Mentee added');
-      }
-      load();
-    });
-  }
 
   async function saveProfile(payload) {
     return run(async () => {
@@ -218,7 +173,7 @@ export default function MentorClient({ me }) {
       <PageHead
         eyebrow="Faculty Mentor"
         title="Mentor Dashboard"
-        subtitle="Mentees, credits, meetings, and issues — one place for weekly mentoring work."
+        subtitle="Mentees assigned by your HoD, plus credits, meetings, and issues."
       />
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-5">
@@ -241,19 +196,12 @@ export default function MentorClient({ me }) {
 
       {tab === 'mentees' && (
         <Card
-          title="My mentees"
-          subtitle="Open Mentoring for credits & counselling, or edit the full profile"
+          title="Assigned mentees"
+          subtitle="Students your HoD mapped to you. You cannot add students here."
           actions={(
             <span className="flex flex-wrap gap-2">
               <a className="btn-ghost !py-1.5 !px-3 text-xs" href="/api/reports/learners?format=xlsx">Learner Excel</a>
               <a className="btn-ghost !py-1.5 !px-3 text-xs" href="/api/reports/interactions">Interactions Excel</a>
-              <button
-                type="button"
-                className="btn-primary !py-1.5 !px-3 text-xs"
-                onClick={() => { setShowStudent(true); setStudentForm({}); setErrors({}); setStudentCreds(null); }}
-              >
-                + Add mentee
-              </button>
             </span>
           )}
         >
@@ -274,7 +222,9 @@ export default function MentorClient({ me }) {
                       <div className="min-w-0 flex-1">
                         <div className="font-semibold text-ink truncate">{s.name}</div>
                         <div className="text-xs text-ink/45 mt-0.5">
-                          {s.registrationNo} · CGPA {s.latestCGPA ?? '—'} · {s.liveBacklogs ?? 0} backlog{(s.liveBacklogs || 0) === 1 ? '' : 's'}
+                          {s.registrationNo}
+                          {s.department?.name ? ` · ${s.department.name}` : ''}
+                          {' · '}CGPA {s.latestCGPA ?? '—'} · {s.liveBacklogs ?? 0} backlog{(s.liveBacklogs || 0) === 1 ? '' : 's'}
                         </div>
                         <div className="flex flex-wrap gap-1.5 mt-2">
                           {learnerBadge(learnerMap[s._id])}
@@ -294,6 +244,7 @@ export default function MentorClient({ me }) {
                   <thead>
                     <tr>
                       <th className="th">Student</th>
+                      <th className="th">Department</th>
                       <th className="th">Programme</th>
                       <th className="th">CGPA</th>
                       <th className="th">Backlogs</th>
@@ -309,6 +260,7 @@ export default function MentorClient({ me }) {
                           <div className="font-medium text-ink">{s.name}</div>
                           <div className="text-xs text-ink/40">{s.registrationNo}</div>
                         </td>
+                        <td className="td">{s.department?.name || s.department?.code || '—'}</td>
                         <td className="td">{s.programme || '—'}</td>
                         <td className="td tabular-nums font-semibold">{s.latestCGPA ?? '—'}</td>
                         <td className="td tabular-nums">{s.liveBacklogs ?? 0}</td>
@@ -330,7 +282,7 @@ export default function MentorClient({ me }) {
             </>
           ) : (
             <p className="text-sm text-ink/45 py-4 text-center">
-              No mentees yet. Add one here, or ask your HoD to map students to you.
+              No mentees assigned yet. Your HoD adds students and maps them to you — they will show up here.
             </p>
           )}
         </Card>
@@ -500,45 +452,6 @@ export default function MentorClient({ me }) {
             student={workspace}
             onClose={() => { setWorkspace(null); load(); }}
           />
-        )}
-      </Modal>
-
-      <Modal
-        open={showStudent}
-        onClose={() => { setShowStudent(false); setStudentCreds(null); }}
-        title="Add mentee"
-        description={studentCreds ? 'Save these credentials — they were also emailed to the student.' : 'Creates their login and emails a temporary password. They are mapped to you.'}
-      >
-        {studentCreds ? (
-          <div className="ui-form-stack">
-            <p className="text-sm text-ink/65">Account created. The student can sign in with these details.</p>
-            <div className="ui-callout-warn p-3 text-sm space-y-1">
-              <div><span className="text-ink/55">Email:</span> <b>{studentCreds.email}</b></div>
-              <div><span className="text-ink/55">Temp password:</span> <b>{studentCreds.pass}</b></div>
-            </div>
-            <button type="button" className="btn-primary hero-cta-shine w-full !py-3" onClick={() => { setShowStudent(false); setStudentCreds(null); }}>Done</button>
-          </div>
-        ) : (
-          <form onSubmit={createStudent} className="ui-form-stack" noValidate>
-            <Field label="Registration No" error={errors.registrationNo}>
-              <input className="input" placeholder="210301120001" value={studentForm.registrationNo || ''} onChange={(e) => setStudentField('registrationNo', e.target.value)} disabled={busy} />
-            </Field>
-            <Field label="Full name" error={errors.name}>
-              <input className="input" placeholder="Student name" value={studentForm.name || ''} onChange={(e) => setStudentField('name', e.target.value)} disabled={busy} />
-            </Field>
-            <Field label="Email" hint="Login credentials are emailed here." error={errors.email}>
-              <input className="input" type="email" placeholder="student@cutm.ac.in" value={studentForm.email || ''} onChange={(e) => setStudentField('email', e.target.value)} disabled={busy} />
-            </Field>
-            <FieldGrid>
-              <Field label="Programme" optional>
-                <input className="input" placeholder="B.Tech CSE" value={studentForm.programme || ''} onChange={(e) => setStudentField('programme', e.target.value)} disabled={busy} />
-              </Field>
-              <Field label="Batch" optional>
-                <input className="input" placeholder="2022-2026" value={studentForm.batch || ''} onChange={(e) => setStudentField('batch', e.target.value)} disabled={busy} />
-              </Field>
-            </FieldGrid>
-            <SubmitButton loading={busy} loadingText="Adding mentee…">Add mentee & email credentials</SubmitButton>
-          </form>
         )}
       </Modal>
 

@@ -35,7 +35,6 @@ export default function HodClient({ me }) {
   const [creds, setCreds] = useState(null);
   const [importResult, setImportResult] = useState(null);
   const [file, setFile] = useState(null);
-  const [issueCreds, setIssueCreds] = useState(true);
   const [mapMentor, setMapMentor] = useState('');
   const [mapStudents, setMapStudents] = useState([]);
   const [mapFilter, setMapFilter] = useState('all'); // all | unmapped
@@ -146,7 +145,6 @@ export default function HodClient({ me }) {
     await run(async () => {
       const fd = new FormData();
       fd.append('file', file);
-      fd.append('issueCredentials', String(issueCreds));
       const res = await fetch('/api/students/import', { method: 'POST', body: fd });
       const data = await res.json();
       if (!res.ok) {
@@ -291,7 +289,7 @@ export default function HodClient({ me }) {
           {tab === 'students' && (
             <Card
               title="Students"
-              subtitle="Onboard one-by-one or import from Excel; set each credit plan"
+              subtitle={`${me.departmentName ? `${me.departmentName} · ` : ''}Add one-by-one or import Excel. Credentials are emailed every time. Then map them to a mentor.`}
               actions={(
                 <div className="flex flex-wrap gap-2">
                   <a className="btn-ghost !py-1.5 !px-3 text-xs" href="/api/students/template">Template</a>
@@ -532,7 +530,7 @@ export default function HodClient({ me }) {
         open={showStudent}
         onClose={() => { setShowStudent(false); setCreds(null); }}
         title="Add student"
-        description={creds ? 'Save these credentials — they were also emailed to the student.' : 'Email is required so we can send their login.'}
+        description={creds ? 'Save these credentials — they were also emailed to the student.' : `Adds the student to ${me.departmentName || 'your department'} and emails their login.`}
         wide
       >
         {creds ? (
@@ -546,6 +544,9 @@ export default function HodClient({ me }) {
           </div>
         ) : (
         <form onSubmit={createStudent} className="ui-form-stack" noValidate>
+          {me.departmentName ? (
+            <p className="text-sm text-ink/55">Department: <b className="text-ink">{me.departmentName}</b></p>
+          ) : null}
           <FieldGrid>
             <Field label="Registration No" error={errors.registrationNo}>
               <input className="input" placeholder="210301120001" value={form.registrationNo || ''} onChange={(e) => setField('registrationNo', e.target.value)} disabled={busy} />
@@ -590,26 +591,19 @@ export default function HodClient({ me }) {
         open={showImport}
         onClose={() => { setShowImport(false); setImportResult(null); }}
         title="Import students from Excel"
-        description="Download the template, fill it, then upload. Mentors match by MentorEmail."
+        description="Students are added to your department. Each row with an email gets a login mail. Mentors match by MentorEmail."
       >
         {!importResult ? (
           <form onSubmit={doImport} className="ui-form-stack" noValidate>
             <a className="btn-ghost w-full justify-center" href="/api/students/template">
               Download template
             </a>
-            <Field label="Excel file (.xlsx)" hint="Use the template columns for a clean import." error={errors.file}>
+            <Field label="Excel file (.xlsx)" hint="Use the template. Login credentials are emailed for every row that has an Email." error={errors.file}>
               <input className="input" type="file" accept=".xlsx" onChange={(e) => { setFile(e.target.files[0]); setErrors((p) => ({ ...p, file: undefined })); }} disabled={busy} />
             </Field>
-            <label className="flex items-start gap-2.5 text-sm leading-snug ui-nest p-3 cursor-pointer">
-              <input
-                type="checkbox"
-                className="mt-0.5"
-                checked={issueCreds}
-                onChange={(e) => setIssueCreds(e.target.checked)}
-                disabled={busy}
-              />
-              <span>Issue login credentials to students (emails them)</span>
-            </label>
+            <p className="text-sm text-ink/55 ui-nest p-3">
+              Credentials are emailed to each student automatically. Fill <b>MentorEmail</b> to map them in the same import.
+            </p>
             <SubmitButton loading={busy} loadingText="Importing…">Upload & import</SubmitButton>
           </form>
         ) : (
