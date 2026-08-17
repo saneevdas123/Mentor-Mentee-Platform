@@ -3,7 +3,8 @@ import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
 
 const COOKIE_NAME = 'cutm_session';
-const TTL = parseInt(process.env.SESSION_TTL || '28800', 10); // seconds
+const SEVEN_DAYS = 60 * 60 * 24 * 7;
+const TTL = parseInt(process.env.SESSION_TTL || String(SEVEN_DAYS), 10);
 
 function secretKey() {
   const secret = process.env.JWT_SECRET;

@@ -1,3 +1,6 @@
+import { redirect } from 'next/navigation';
+import { getSession } from '@/lib/auth';
+import { ROLE_HOME } from '@/lib/rbac';
 import { SITE } from '@/lib/site';
 
 export const metadata = {
@@ -12,6 +15,10 @@ export const metadata = {
   },
 };
 
-export default function LoginLayout({ children }) {
+export const dynamic = 'force-dynamic';
+
+export default async function LoginLayout({ children }) {
+  const session = await getSession();
+  if (session?.role) redirect(ROLE_HOME[session.role] || '/');
   return children;
 }

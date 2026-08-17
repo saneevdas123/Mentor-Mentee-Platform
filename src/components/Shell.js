@@ -265,7 +265,7 @@ export default function Shell({
 
   async function logout() {
     await fetch('/api/auth/logout', { method: 'POST' });
-    router.push('/login');
+    router.replace('/login');
   }
 
   useEffect(() => {

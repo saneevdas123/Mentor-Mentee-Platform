@@ -158,7 +158,7 @@ src/
 ├─ models/                   Mongoose models (User, School, Department,
 │                            StudentProfile, Mapping, Issue, Meeting,
 │                            Minutes, Announcement)
-└─ middleware.js             Route protection by role
+└─ proxy.js                  Session + role redirects (middleware.js re-exports for Next 15)
 scripts/
 ├─ seed.js                   Bootstrap admin (+ optional demo data)
 └─ worker.js                 Optional self-hosted scheduler
@@ -169,7 +169,7 @@ scripts/
 ## 7. Security notes
 
 - Passwords hashed with bcrypt; sessions are signed JWTs in an httpOnly cookie.
-- Route-level RBAC in `middleware.js`; API-level RBAC via `src/lib/apiGuard.js`.
+- Route-level RBAC in `proxy.js` (7-day `cutm_session` cookie); API-level RBAC via `src/lib/apiGuard.js`.
 - All data queries are scoped to the signed-in user's school/department.
 - First-login forced password change for every provisioned account.
 - Change `JWT_SECRET`, `CRON_SECRET`, and the seed admin password before going live.

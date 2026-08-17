@@ -29,7 +29,7 @@ services:
       # A FIXED secret keeps everyone signed in across restarts.
       # Change this to your own long random value before any real use.
       JWT_SECRET: "cutm-demo-fixed-secret-change-me-for-production-0123456789abcdef"
-      SESSION_TTL: "28800"
+      SESSION_TTL: "604800"
       SEED_ADMIN_NAME: "System Administrator"
       SEED_ADMIN_EMAIL: "admin@cutm.ac.in"
       SEED_ADMIN_PASSWORD: "Admin@12345"

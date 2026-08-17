@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -79,6 +79,25 @@ export default function LoginPage() {
   const [newPass, setNewPass] = useState('');
   const [home, setHome] = useState('/');
 
+  useEffect(() => {
+    let alive = true;
+    async function bounceIfSignedIn() {
+      try {
+        const res = await fetch('/api/auth/me', { cache: 'no-store' });
+        const data = await res.json();
+        if (alive && data.user) router.replace(data.home || '/');
+      } catch {
+        /* stay on login */
+      }
+    }
+    bounceIfSignedIn();
+    window.addEventListener('pageshow', bounceIfSignedIn);
+    return () => {
+      alive = false;
+      window.removeEventListener('pageshow', bounceIfSignedIn);
+    };
+  }, [router]);
+
   async function onLogin(e) {
     e.preventDefault();
     setErr('');
@@ -93,7 +112,7 @@ export default function LoginPage() {
       if (!res.ok) throw new Error(data.error || 'Login failed');
       setHome(data.home);
       if (data.user.mustChangePassword) setChangeMode(true);
-      else router.push(data.home);
+      else router.replace(data.home);
     } catch (e) {
       setErr(e.message);
     } finally {
@@ -113,7 +132,7 @@ export default function LoginPage() {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed');
-      router.push(home);
+      router.replace(home);
     } catch (e) {
       setErr(e.message);
     } finally {
