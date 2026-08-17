@@ -15,7 +15,7 @@ const TABS = [
   ['overview', 'Overview'],
   ['academics', 'Academics'],
   ['credits', 'Credits'],
-  ['issues', 'Issues'],
+  ['issues', 'Tickets'],
   ['meetings', 'Meetings'],
 ];
 
@@ -79,7 +79,8 @@ export default function StudentClient({ me }) {
       setShowIssue(false);
       setIssueForm({ subject: '', description: '', category: 'ACADEMIC', priority: 'MEDIUM' });
       setErrors({});
-      show.success('Issue submitted to your mentor');
+      if (data.emailed) show.success(`Support ticket ${data.ticketNo || ''} emailed to your mentor`.trim());
+      else show.error('Ticket saved, but the email to your mentor did not send.');
       load();
     });
   }
@@ -257,8 +258,8 @@ export default function StudentClient({ me }) {
 
       {tab === 'issues' && (
         <Card
-          title="My issues"
-          subtitle="Raise concerns for your mentor — they can reply here"
+          title="My support tickets"
+          subtitle="Raise a support ticket — your mentor is emailed and can reply here"
           actions={
             <button type="button" className="btn-primary !py-2" onClick={() => { setShowIssue(true); setErrors({}); }}>
               Raise issue
@@ -273,7 +274,9 @@ export default function StudentClient({ me }) {
                     <div className="min-w-0">
                       <div className="font-semibold text-ink">{i.subject}</div>
                       <div className="text-xs text-ink/40 mt-0.5">
-                        {(i.category || '').replace(/_/g, ' ')}
+                        {i.ticketNo || `SUP-${String(i._id).slice(-6).toUpperCase()}`}
+                        {' · Support'}
+                        {i.category ? ` · ${String(i.category).replace(/_/g, ' ')}` : ''}
                         {i.priority ? ` · ${i.priority}` : ''}
                       </div>
                     </div>
@@ -292,7 +295,7 @@ export default function StudentClient({ me }) {
             </div>
           ) : (
             <div className="py-6 text-center">
-              <p className="text-sm text-ink/45 mb-3">You have not raised any issues yet.</p>
+              <p className="text-sm text-ink/45 mb-3">You have not raised any support tickets yet.</p>
               <button type="button" className="btn-primary" onClick={() => setShowIssue(true)}>
                 Raise your first issue
               </button>
@@ -362,8 +365,8 @@ export default function StudentClient({ me }) {
       <Modal
         open={showIssue}
         onClose={() => setShowIssue(false)}
-        title="Raise an Issue"
-        description="Your mentor will see this and can reply from their dashboard."
+        title="Raise a support ticket"
+        description="Your mentor is emailed this ticket and can reply from their dashboard."
       >
         <form onSubmit={raiseIssue} className="ui-form-stack" noValidate>
           <Field label="Subject" error={errors.subject}>
@@ -393,7 +396,7 @@ export default function StudentClient({ me }) {
           <Field label="Description" hint="Share enough detail for your mentor to help." error={errors.description}>
             <textarea className="input" rows={4} placeholder="What happened, and what do you need help with?" value={issueForm.description} onChange={(e) => setIssueField('description', e.target.value)} disabled={busy} />
           </Field>
-          <SubmitButton loading={busy} loadingText="Submitting…">Submit to mentor</SubmitButton>
+          <SubmitButton loading={busy} loadingText="Sending ticket…">Submit to mentor</SubmitButton>
         </form>
       </Modal>
 

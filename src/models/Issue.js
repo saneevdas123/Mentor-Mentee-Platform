@@ -9,6 +9,8 @@ const IssueSchema = new mongoose.Schema(
     department: { type: mongoose.Schema.Types.ObjectId, ref: 'Department', index: true },
     school: { type: mongoose.Schema.Types.ObjectId, ref: 'School', index: true },
 
+    ticketType: { type: String, enum: ['SUPPORT'], default: 'SUPPORT' },
+    ticketNo: { type: String, unique: true, sparse: true, index: true },
     category: {
       type: String,
       enum: ['ACADEMIC', 'ATTENDANCE', 'PLACEMENT', 'FINANCIAL', 'PSYCHOLOGICAL', 'HOSTEL', 'HARASSMENT', 'OTHER'],

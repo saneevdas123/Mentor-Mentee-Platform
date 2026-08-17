@@ -422,3 +422,119 @@ export function gradesheetRequestEmail({ studentName, mentorName, dashboardUrl }
     text,
   };
 }
+
+function prettyLabel(value) {
+  return String(value || '').replace(/_/g, ' ');
+}
+
+export function newSupportTicketEmail({
+  mentorName,
+  studentName,
+  ticketNo,
+  subject: issueSubject,
+  category,
+  priority,
+  description,
+  dashboardUrl,
+}) {
+  const dash = httpUrl(dashboardUrl) || `${getSiteUrl()}/mentor`;
+  const ticket = ticketNo || 'SUPPORT';
+  const title = issueSubject || 'New support ticket';
+
+  const bodyHtml = [
+    p(`Hello ${esc(mentorName || 'Mentor')},`),
+    p(`<strong>${esc(studentName || 'A mentee')}</strong> has opened a support ticket. Please review it and reply from your dashboard.`),
+    detailsTable([
+      metaRow('Ticket', esc(ticket)),
+      metaRow('Type', 'Support'),
+      metaRow('From', esc(studentName || 'Student')),
+      metaRow('Subject', esc(title)),
+      metaRow('Category', esc(prettyLabel(category) || 'Academic')),
+      metaRow('Priority', esc(prettyLabel(priority) || 'Medium')),
+      description ? metaRow('Details', esc(description)) : '',
+    ].join('')),
+    note('Reply on the ticket so the student is emailed when you add a note or change the status.'),
+    ctaButton(dash, 'Open ticket on dashboard'),
+    p('If the button does not open, sign in at the usual CUTM Mentoring address and go to Issues.'),
+  ].join('');
+
+  const text = [
+    `Hello ${mentorName || 'Mentor'},`,
+    '',
+    `${studentName || 'A mentee'} opened support ticket ${ticket}.`,
+    `Subject: ${title}`,
+    `Category: ${prettyLabel(category) || 'Academic'}`,
+    `Priority: ${prettyLabel(priority) || 'Medium'}`,
+    description ? `Details: ${description}` : '',
+    '',
+    `Open: ${dash}`,
+    '',
+    'Mentoring Cell, Centurion University',
+  ].filter(Boolean).join('\n');
+
+  return {
+    subject: `CUTM Mentoring — new support ticket ${ticket}`,
+    html: brandedEmail({
+      preheader: `${studentName || 'A mentee'} asked for help: ${title}`,
+      eyebrow: 'Support ticket',
+      heading: 'New ticket from your mentee',
+      bodyHtml,
+    }),
+    text,
+  };
+}
+
+export function supportTicketUpdateEmail({
+  studentName,
+  mentorName,
+  ticketNo,
+  subject: issueSubject,
+  status,
+  message,
+  dashboardUrl,
+}) {
+  const dash = httpUrl(dashboardUrl) || `${getSiteUrl()}/student`;
+  const ticket = ticketNo || 'SUPPORT';
+  const title = issueSubject || 'Your support ticket';
+  const mentor = mentorName || 'Your faculty mentor';
+  const statusLine = prettyLabel(status) || 'Updated';
+
+  const bodyHtml = [
+    p(`Hello ${esc(studentName || 'there')},`),
+    p(`<strong>${esc(mentor)}</strong> updated your support ticket.`),
+    detailsTable([
+      metaRow('Ticket', esc(ticket)),
+      metaRow('Type', 'Support'),
+      metaRow('Subject', esc(title)),
+      metaRow('Status', esc(statusLine)),
+      message ? metaRow('Reply', esc(message)) : '',
+    ].join('')),
+    note('Sign in to read the full thread and add more detail if you still need help.'),
+    ctaButton(dash, 'View ticket'),
+    p('If the button does not open, sign in at the usual CUTM Mentoring address and go to Issues.'),
+  ].join('');
+
+  const text = [
+    `Hello ${studentName || 'there'},`,
+    '',
+    `${mentor} updated support ticket ${ticket}.`,
+    `Subject: ${title}`,
+    `Status: ${statusLine}`,
+    message ? `Reply: ${message}` : '',
+    '',
+    `Open: ${dash}`,
+    '',
+    'Mentoring Cell, Centurion University',
+  ].filter(Boolean).join('\n');
+
+  return {
+    subject: `CUTM Mentoring — update on ticket ${ticket}`,
+    html: brandedEmail({
+      preheader: `${mentor} updated ${ticket} · ${statusLine}`,
+      eyebrow: 'Support ticket',
+      heading: 'Your mentor replied',
+      bodyHtml,
+    }),
+    text,
+  };
+}

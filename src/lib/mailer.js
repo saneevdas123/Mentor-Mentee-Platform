@@ -2,7 +2,14 @@ import path from 'path';
 import nodemailer from 'nodemailer';
 import { EMAIL_LOGO_CID } from '@/lib/emailTemplates';
 
-export { weeklyMeetingEmail, parentMeetingEmail, credentialsEmail, gradesheetRequestEmail } from '@/lib/emailTemplates';
+export {
+  weeklyMeetingEmail,
+  parentMeetingEmail,
+  credentialsEmail,
+  gradesheetRequestEmail,
+  newSupportTicketEmail,
+  supportTicketUpdateEmail,
+} from '@/lib/emailTemplates';
 
 let transporter = null;
 

@@ -151,7 +151,8 @@ export default function MentorClient({ me }) {
         return;
       }
       setRespondIssue(null);
-      show.success('Response sent');
+      if (data.emailed) show.success('Reply emailed to the student');
+      else show.error('Reply saved, but the email to the student did not send.');
       load();
     });
   }
@@ -188,7 +189,7 @@ export default function MentorClient({ me }) {
           ['mentees', 'Mentees'],
           ['meetings', 'Meetings'],
           ['minutes', 'Minutes'],
-          ['issues', `Issues${openIssues ? ` (${openIssues})` : ''}`],
+          ['issues', `Tickets${openIssues ? ` (${openIssues})` : ''}`],
         ].map(([k, l]) => (
           <Tab key={k} active={tab === k} onClick={() => setTab(k)}>{l}</Tab>
         ))}
@@ -400,8 +401,8 @@ export default function MentorClient({ me }) {
 
       {tab === 'issues' && (
         <Card
-          title="Mentee issues"
-          subtitle="Reply clearly and keep status up to date"
+          title="Support tickets"
+          subtitle="Reply or change status — the student is emailed"
         >
           {needsReply.length > 0 && (
             <div className="ui-callout-warn p-3 text-sm mb-4">
@@ -416,6 +417,8 @@ export default function MentorClient({ me }) {
                     <div className="min-w-0">
                       <div className="font-semibold text-ink">{i.subject}</div>
                       <div className="text-xs text-ink/45 mt-0.5">
+                        {i.ticketNo || `SUP-${String(i._id).slice(-6).toUpperCase()}`}
+                        {' · Support · '}
                         {i.student?.name || 'Student'}
                         {i.category ? ` · ${String(i.category).replace(/_/g, ' ')}` : ''}
                         {i.priority ? ` · ${i.priority}` : ''}
@@ -435,7 +438,7 @@ export default function MentorClient({ me }) {
               ))}
             </div>
           ) : (
-            <p className="text-sm text-ink/45 py-4 text-center">No issues raised by your mentees yet.</p>
+            <p className="text-sm text-ink/45 py-4 text-center">No support tickets from your mentees yet.</p>
           )}
         </Card>
       )}
@@ -533,8 +536,8 @@ export default function MentorClient({ me }) {
       <Modal
         open={!!respondIssue}
         onClose={() => setRespondIssue(null)}
-        title="Respond to issue"
-        description={respondIssue ? `${respondIssue.student?.name || 'Student'} · ${respondIssue.subject}` : undefined}
+        title="Respond to ticket"
+        description={respondIssue ? `${respondIssue.ticketNo || 'Support'} · ${respondIssue.student?.name || 'Student'} · ${respondIssue.subject}` : undefined}
       >
         {respondIssue && (
           <div className="ui-form-stack">
@@ -581,7 +584,7 @@ export default function MentorClient({ me }) {
                   <option value="CLOSED">Closed</option>
                 </select>
               </Field>
-              <SubmitButton loading={busy} loadingText="Sending…">Send response</SubmitButton>
+              <SubmitButton loading={busy} loadingText="Sending reply…">Send response</SubmitButton>
             </form>
           </div>
         )}
