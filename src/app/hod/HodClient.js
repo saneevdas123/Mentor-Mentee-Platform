@@ -103,6 +103,7 @@ export default function HodClient({ me }) {
     const next = requiredFields({
       registrationNo: [form.registrationNo, 'Enter the registration number'],
       name: [form.name, 'Enter the student’s full name'],
+      email: [form.email, 'Enter an email to send login credentials'],
     });
     if (form.email && !isEmail(form.email)) next.email = 'Enter a valid email address';
     setErrors(next);
@@ -114,17 +115,22 @@ export default function HodClient({ me }) {
       const res = await fetch('/api/students', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ ...form, issueCredentials: true }),
       });
       const data = await res.json();
       if (!res.ok) {
         show.error(data.error || 'Could not add the student');
         return;
       }
-      setShowStudent(false);
       setForm({});
       setErrors({});
-      show.success('Student added');
+      if (data.tempPassword) {
+        setCreds({ email: data.student?.email || form.email, pass: data.tempPassword });
+        show.success(data.credentialsEmailed ? 'Student added — credentials emailed' : 'Student added — save the temporary password');
+      } else {
+        setShowStudent(false);
+        show.success('Student added');
+      }
       load();
     });
   }
@@ -297,7 +303,7 @@ export default function HodClient({ me }) {
                   >
                     Import
                   </button>
-                  <button type="button" className="btn-primary !py-1.5 !px-3 text-xs" onClick={() => { setShowStudent(true); setForm({}); setErrors({}); }}>
+                  <button type="button" className="btn-primary !py-1.5 !px-3 text-xs" onClick={() => { setShowStudent(true); setForm({}); setErrors({}); setCreds(null); }}>
                     Add student
                   </button>
                 </div>
@@ -524,11 +530,21 @@ export default function HodClient({ me }) {
 
       <Modal
         open={showStudent}
-        onClose={() => setShowStudent(false)}
+        onClose={() => { setShowStudent(false); setCreds(null); }}
         title="Add student"
-        description="Required fields first — you can enrich the profile later."
+        description={creds ? 'Save these credentials — they were also emailed to the student.' : 'Email is required so we can send their login.'}
         wide
       >
+        {creds ? (
+          <div className="ui-form-stack">
+            <p className="text-sm text-ink/65">Account created. The student can sign in with these details.</p>
+            <div className="ui-callout-warn p-3 text-sm space-y-1">
+              <div><span className="text-ink/55">Email:</span> <b>{creds.email}</b></div>
+              <div><span className="text-ink/55">Temp password:</span> <b>{creds.pass}</b></div>
+            </div>
+            <button type="button" className="btn-primary hero-cta-shine w-full !py-3" onClick={() => { setShowStudent(false); setCreds(null); }}>Done</button>
+          </div>
+        ) : (
         <form onSubmit={createStudent} className="ui-form-stack" noValidate>
           <FieldGrid>
             <Field label="Registration No" error={errors.registrationNo}>
@@ -540,7 +556,7 @@ export default function HodClient({ me }) {
             <Field label="Full name" error={errors.name}>
               <input className="input" placeholder="Student name" value={form.name || ''} onChange={(e) => setField('name', e.target.value)} disabled={busy} />
             </Field>
-            <Field label="Email" optional error={errors.email}>
+            <Field label="Email" hint="Login credentials are emailed here." error={errors.email}>
               <input className="input" type="email" placeholder="student@cutm.ac.in" value={form.email || ''} onChange={(e) => setField('email', e.target.value)} disabled={busy} />
             </Field>
             <Field label="Programme" optional>
@@ -565,8 +581,9 @@ export default function HodClient({ me }) {
               <input className="input" placeholder="98765 43210" value={form.parentPhone || ''} onChange={(e) => setField('parentPhone', e.target.value)} disabled={busy} />
             </Field>
           </FieldGrid>
-          <SubmitButton loading={busy} loadingText="Adding student…">Add student</SubmitButton>
+          <SubmitButton loading={busy} loadingText="Adding student…">Add student & email credentials</SubmitButton>
         </form>
+        )}
       </Modal>
 
       <Modal

@@ -6,6 +6,7 @@ import '@/models/Department';
 import '@/models/School';
 import { getSession } from '@/lib/auth';
 import { json, error } from '@/lib/apiGuard';
+import { provisionUser } from '@/lib/provision';
 
 export async function GET(req) {
   const session = await getSession();
@@ -32,17 +33,70 @@ export async function GET(req) {
 export async function POST(req) {
   const session = await getSession();
   if (!session) return error('Unauthorized', 401);
-  if (!['ADMIN', 'DEAN', 'HOD'].includes(session.role)) return error('Forbidden', 403);
+  if (!['ADMIN', 'DEAN', 'HOD', 'MENTOR'].includes(session.role)) return error('Forbidden', 403);
   await dbConnect();
   const body = await req.json();
   if (!body.registrationNo || !body.name) return error('Registration number and name are required.');
+
+  const email = String(body.email || '').trim().toLowerCase();
+  const issueCredentials = body.issueCredentials !== false;
+  if (issueCredentials && !email) return error('Email is required to send login credentials.');
+
   const exists = await StudentProfile.findOne({ registrationNo: body.registrationNo });
   if (exists) return error('A student with this registration number already exists.', 409);
+
+  const school = session.role === 'ADMIN' ? (body.school || session.school) : session.school;
+  const department = session.role === 'ADMIN' || session.role === 'DEAN'
+    ? (body.department || session.department)
+    : session.department;
+
   const student = await StudentProfile.create({
     ...body,
-    school: session.role === 'HOD' || session.role === 'DEAN' ? session.school : body.school,
-    department: session.role === 'HOD' ? session.department : body.department,
+    email: email || undefined,
+    school,
+    department,
     createdBy: session.sub,
   });
-  return json({ ok: true, student }, 201);
+
+  let tempPassword = null;
+  let credentialsEmailed = false;
+  if (issueCredentials && email) {
+    try {
+      const provisioned = await provisionUser({
+        name: body.name,
+        email,
+        role: 'STUDENT',
+        phone: body.phone,
+        school,
+        department,
+        createdBy: session.sub,
+      });
+      student.user = provisioned.user._id;
+      await student.save();
+      tempPassword = provisioned.tempPassword;
+      credentialsEmailed = true;
+    } catch (e) {
+      console.warn('[students] credential email failed:', e.message);
+    }
+  }
+
+  if (session.role === 'MENTOR') {
+    await Mapping.updateOne(
+      { mentor: session.sub, student: student._id, academicYear: body.batch || 'current' },
+      {
+        $set: {
+          mentor: session.sub,
+          student: student._id,
+          department,
+          school,
+          academicYear: body.batch || 'current',
+          active: true,
+          assignedBy: session.sub,
+        },
+      },
+      { upsert: true }
+    );
+  }
+
+  return json({ ok: true, student, tempPassword, credentialsEmailed }, 201);
 }
